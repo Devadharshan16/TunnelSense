@@ -7,6 +7,16 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import torch.ao.quantization as quant
 from torch.ao.quantization import QuantStub, DeQuantStub
+try:
+    from tqdm import tqdm
+except ImportError:
+    class tqdm:
+        def __init__(self, iterable, *args, **kwargs):
+            self.iterable = iterable
+        def __iter__(self):
+            return iter(self.iterable)
+        def set_postfix(self, *args, **kwargs):
+            pass
 
 # --- Hyperparameters ---
 BATCH_SIZE = 64
@@ -17,9 +27,10 @@ EARLY_STOP_PATIENCE = 15  # Stop if val loss doesn't improve for 15 epochs
 
 # --- Dataset Definition ---
 class IMUDataset(Dataset):
-    def __init__(self, file_list):
+    def __init__(self, file_list, split_name="Dataset"):
         self.X = []
         self.Y = []
+        print(f"Loading {len(file_list)} files for {split_name} into memory...", flush=True)
         
         for file in file_list:
             try:
@@ -116,21 +127,21 @@ if __name__ == "__main__":
     train_files = glob.glob(os.path.join(train_dir, '*.npz'))
     test_files = glob.glob(os.path.join(val_dir, '*.npz'))
     
-    print(f"Strict Explicit Split: Loading Training Session (Route A) from {train_dir}")
-    print(f"Strict Explicit Split: Loading Validation Session (Route B) from {val_dir}")
-    print(f"Found {len(train_files)} training files and {len(test_files)} validation files.")
+    print(f"Strict Explicit Split: Loading Training Session (Route A) from {train_dir}", flush=True)
+    print(f"Strict Explicit Split: Loading Validation Session (Route B) from {val_dir}", flush=True)
+    print(f"Found {len(train_files)} training files and {len(test_files)} validation files.", flush=True)
     
-    train_dataset = IMUDataset(train_files)
-    test_dataset = IMUDataset(test_files)
+    train_dataset = IMUDataset(train_files, split_name="Train")
+    test_dataset = IMUDataset(test_files, split_name="Validation")
     
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
     
-    # GPU Support: Use CUDA if available (RTX 4050), otherwise CPU
+    # GPU Support: Use CUDA if available (RTX 5050), otherwise CPU
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Executing Quantization-Aware Training on: {device}")
+    print(f"Executing Quantization-Aware Training on: {device}", flush=True)
     if device.type == "cuda":
-        print(f"GPU Detected: {torch.cuda.get_device_name(0)}")
+        print(f"GPU Detected: {torch.cuda.get_device_name(0)}", flush=True)
     
     model = TCNVelocityEstimator(in_features=FEATURES)
     
@@ -163,8 +174,6 @@ if __name__ == "__main__":
     best_val_loss = float('inf')
     patience_counter = 0
     best_model_state = None
-    
-    from tqdm import tqdm
     
     for epoch in range(EPOCHS):
         # 1. Training Phase

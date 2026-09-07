@@ -1,5 +1,7 @@
 # TunnelSense Python Requirements
-# Configured for Python 3.14 on Windows (NVIDIA GeForce RTX 5050)
+# Configured for Python 3.14 on Windows (NVIDIA GeForce RTX 5050 - Blackwell sm_120)
+# To install with CUDA 13.0 support for RTX 50-series:
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130
 
 torch>=2.2.0
 torchvision>=0.17.0
@@ -10,3 +12,4 @@ scipy>=1.13.0
 scikit-learn>=1.5.0
 matplotlib>=3.8.0
 joblib>=1.4.0
+tqdm>=4.66.0
