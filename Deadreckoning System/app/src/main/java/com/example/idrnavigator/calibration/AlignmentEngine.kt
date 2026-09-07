@@ -3,6 +3,7 @@ package com.example.idrnavigator.calibration
 import android.hardware.SensorManager
 import com.example.idrnavigator.sensors.GpsData
 import com.example.idrnavigator.sensors.ImuData
+import com.example.idr.core.estimator.CoreDeadReckoner
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -102,6 +103,10 @@ class AlignmentEngine {
 
         // Once calibrated, apply the fixed rotation to all sensors
         val alignedAccel = alignVector(rawImu.accelX, rawImu.accelY, rawImu.accelZ)
+        // Remove gravity from the Up axis (index 2) of accelerometer ONLY.
+        // Gyro and mag do not contain a gravity component — do NOT touch them.
+        // After this, a stationary device reads ~0 m/s² on all three axes.
+        alignedAccel[2] = alignedAccel[2] - CoreDeadReckoner.GRAVITY
         val alignedGyro = alignVector(rawImu.gyroX, rawImu.gyroY, rawImu.gyroZ)
         val alignedMag = alignVector(rawImu.magX, rawImu.magY, rawImu.magZ)
 

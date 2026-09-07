@@ -4,7 +4,6 @@ import android.content.Context
 import android.util.Log
 import com.example.idr.core.estimator.CoreDeadReckoner
 import com.example.idrnavigator.sensors.ImuData
-import kotlin.math.abs
 import kotlin.math.sqrt
 
 /**
@@ -133,14 +132,18 @@ class AiPositionEstimator(
         return classicalFallback.estimatePosition(lastPosition, velocity, headingDeg, deltaTimeSeconds)
     }
 
+    /**
+     * ZUPT stationarity check for gravity-free aligned IMU data.
+     *
+     * After AlignmentEngine removes gravity from the Up axis, a stationary device
+     * reads accelMag ≈ 0 (not ≈ 9.81). We check that the total linear acceleration
+     * magnitude is below the threshold — no gravity subtraction needed here.
+     */
     private fun checkStationary(imuWindow: List<ImuData>): Boolean {
         var stationaryCount = 0
         for (data in imuWindow) {
             val accelMag = sqrt(data.accelX * data.accelX + data.accelY * data.accelY + data.accelZ * data.accelZ)
-            // Translational stationarity: Net acceleration is close to 1g (gravity),
-            // meaning the device is not undergoing linear forward/lateral translation.
-            // Even if the phone is rotated in hand (high gyro), translational motion is zero.
-            if (abs(accelMag - GRAVITY) < ZUPT_ACCEL_THRESHOLD) {
+            if (accelMag < ZUPT_ACCEL_THRESHOLD) {
                 stationaryCount++
             }
         }
@@ -154,6 +157,3 @@ class AiPositionEstimator(
         rawPredictedKmH = 0f
     }
 }
-
-
-

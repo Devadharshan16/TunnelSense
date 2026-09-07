@@ -74,10 +74,10 @@ class CoreDeadReckoner(
                 data.accelY * data.accelY +
                 data.accelZ * data.accelZ
             )
-            val accelDeviation = abs(accelMag - GRAVITY)
+            val accelDeviation = accelMag  // Gravity already removed upstream by AlignmentEngine
 
-            // Translational stationarity depends purely on linear acceleration deviation from 1g.
-            // Even if the phone/vehicle rotates in place (high gyro), translational velocity is zero.
+            // Translational stationarity: after gravity removal, a stationary device reads
+            // accelMag ≈ 0. Any significant magnitude indicates linear motion.
             if (accelDeviation < ZUPT_ACCEL_MAGNITUDE_THRESHOLD) {
                 stationarySamples++
             }
