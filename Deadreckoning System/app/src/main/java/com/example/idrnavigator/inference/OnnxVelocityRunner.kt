@@ -36,7 +36,7 @@ class OnnxVelocityRunner(private val context: Context) : AutoCloseable {
         const val WINDOW_LENGTH = 200
     }
 
-    private val env: OrtEnvironment = OrtEnvironment.getEnvironment()
+    private var env: OrtEnvironment? = null
     private var session: OrtSession? = null
 
     val mean = FloatArray(NUM_CHANNELS)
@@ -66,13 +66,14 @@ class OnnxVelocityRunner(private val context: Context) : AutoCloseable {
                 scale[i] = scaleArray.getDouble(i).toFloat()
             }
             Log.d(TAG, "Loaded scaler parameters for $NUM_CHANNELS channels")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to load scaler parameters from assets", e)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to load scaler parameters from assets", t)
         }
     }
 
     private fun initOnnxSession() {
         try {
+            env = OrtEnvironment.getEnvironment()
             // ONNX models with external data (.onnx.data) require both files to reside in the same physical filesystem folder
             val modelsDir = File(context.filesDir, "onnx_models").apply { mkdirs() }
             val modelFile = File(modelsDir, MODEL_NAME)
@@ -87,11 +88,11 @@ class OnnxVelocityRunner(private val context: Context) : AutoCloseable {
                 setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
             }
 
-            session = env.createSession(modelFile.absolutePath, sessionOptions)
+            session = env?.createSession(modelFile.absolutePath, sessionOptions)
             isModelLoaded = true
             Log.d(TAG, "ONNX TinyTCN session created successfully: ${modelFile.absolutePath} (${modelFile.length()} bytes)")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to initialize ONNX Runtime session", e)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to initialize ONNX Runtime session", t)
             isModelLoaded = false
         }
     }
@@ -131,7 +132,7 @@ class OnnxVelocityRunner(private val context: Context) : AutoCloseable {
         inputBuffer.flip()
 
         return try {
-            val inputTensor = OnnxTensor.createTensor(env, inputBuffer, tensorShape)
+            val inputTensor = OnnxTensor.createTensor(env ?: return Pair(0f, 0f), inputBuffer, tensorShape)
             inputTensor.use { tensor ->
                 val results = activeSession.run(Collections.singletonMap(INPUT_NODE_NAME, tensor))
                 results.use { outputMap ->
@@ -159,8 +160,8 @@ class OnnxVelocityRunner(private val context: Context) : AutoCloseable {
                     Pair(clampedPrediction, actualVariance)
                 }
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Inference execution error", e)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Inference execution error", t)
             Pair(0f, 0f)
         }
     }
@@ -169,9 +170,11 @@ class OnnxVelocityRunner(private val context: Context) : AutoCloseable {
         try {
             session?.close()
             session = null
-            env.close()
-        } catch (e: Exception) {
-            Log.w(TAG, "Error closing ONNX resources", e)
+            env?.close()
+        } catch (t: Throwable) {
+            Log.w(TAG, "Error closing ONNX resources", t)
         }
     }
 }
+
+

@@ -53,6 +53,7 @@ data class NavigationUiState(
     val deadReckoningMode: DeadReckoningMode = DeadReckoningMode.AI_TCN,
     val aiLatencyMs: Long = 0L,
     val rawAiVelocityKmH: Float = 0f,
+    val activeEstimationSource: String = "CLASSICAL",
     // Raw or aligned vectors for engineering display
     val imuData: ImuData = ImuData(),
     val gpsData: GpsData = GpsData(),
@@ -120,6 +121,10 @@ class NavigationViewModel(
         }
         _isCourseUpMode.value = settings.getBoolean("course_up_mode", false)
         _isGpsSimulationActive.value = settings.getBoolean("gps_simulation", false)
+        
+        try {
+            com.example.idrnavigator.inference.NativeEngine.initCoreEngine()
+        } catch (t: Throwable) {}
     }
 
     private val alignedImuSource = imuSensorManager.imuDataFlow
@@ -171,7 +176,7 @@ class NavigationViewModel(
             // Pull the latest filtered coordinates from the C++ EKF at 10Hz!
             val filterState = try {
                 com.example.idrnavigator.inference.NativeEngine.getFilterState()
-            } catch (e: Exception) {
+            } catch (t: Throwable) {
                 floatArrayOf(0f, 0f, 0f)
             }
             
@@ -303,6 +308,7 @@ class NavigationViewModel(
             deadReckoningMode = fused.deadReckoningMode,
             aiLatencyMs = fused.aiLatencyMs,
             rawAiVelocityKmH = fused.rawAiVelocityKmH,
+            activeEstimationSource = fused.estimationSource,
             imuData = imu,
             gpsData = GpsData(
                 lat = fused.lat,
@@ -336,3 +342,4 @@ class NavigationViewModel(
         aiEstimator.onnxRunner.close()
     }
 }
+

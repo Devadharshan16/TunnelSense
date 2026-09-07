@@ -331,11 +331,11 @@ fun NavigationHudScreen(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (state.deadReckoningMode == com.example.idrnavigator.fusion.DeadReckoningMode.AI_TCN && state.isAiModelLoaded) {
-                            "MODEL: AI TCN (${state.aiLatencyMs}ms)"
-                        } else {
-                            "MODEL: CLASSICAL"
-                        },
+                        text = if (state.deadReckoningMode == com.example.idrnavigator.fusion.DeadReckoningMode.AI_TCN) {
+                              "MODEL: ${state.activeEstimationSource}" + (if (state.activeEstimationSource == "AI TCN") " (${state.aiLatencyMs}ms)" else " " )
+                          } else {
+                              "MODEL: CLASSICAL"
+                          },
                         color = CockpitPrimaryText,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
@@ -661,3 +661,4 @@ fun InstrumentDataBlock(
         }
     }
 }
+

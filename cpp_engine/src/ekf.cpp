@@ -126,3 +126,22 @@ void ErrorStateEKF::updateGPS(double gps_x, double gps_y, double R_gps) {
     Eigen::MatrixXd I = Eigen::MatrixXd::Identity(8, 8);
     P = (I - K * H) * P;
 }
+
+void ErrorStateEKF::updateHeading(double measured_heading, double R_heading) {
+    Eigen::MatrixXd H = Eigen::MatrixXd::Zero(1, 8);
+    H(0, 2) = 1.0;
+    
+    double predicted_heading = nominal_state(2);
+    double innovation = measured_heading - predicted_heading;
+    innovation = std::atan2(std::sin(innovation), std::cos(innovation));
+    
+    Eigen::MatrixXd R = Eigen::MatrixXd::Identity(1,1) * R_heading;
+    Eigen::MatrixXd S = H * P * H.transpose() + R;
+    Eigen::MatrixXd K = P * H.transpose() * S.inverse();
+    
+    Eigen::VectorXd error_state = K * innovation;
+    injectErrorState(error_state);
+    
+    Eigen::MatrixXd I = Eigen::MatrixXd::Identity(8, 8);
+    P = (I - K * H) * P;
+}

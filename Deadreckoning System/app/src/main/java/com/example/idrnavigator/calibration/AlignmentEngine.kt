@@ -115,20 +115,20 @@ class AlignmentEngine {
 
     private fun alignVector(x: Float, y: Float, z: Float): FloatArray {
         // Step 1: Rotate from Phone Frame to Earth Frame (East, North, Up)
-        val earthX = rMatrix[0] * x + rMatrix[1] * y + rMatrix[2] * z
-        val earthY = rMatrix[3] * x + rMatrix[4] * y + rMatrix[5] * z
-        val earthZ = rMatrix[6] * x + rMatrix[7] * y + rMatrix[8] * z
+        val earthEast = rMatrix[0] * x + rMatrix[1] * y + rMatrix[2] * z
+        val earthNorth = rMatrix[3] * x + rMatrix[4] * y + rMatrix[5] * z
+        val earthUp = rMatrix[6] * x + rMatrix[7] * y + rMatrix[8] * z
 
-        // Step 2: Rotate around Z to align Earth North with Vehicle Forward
-        // gpsBearing is clockwise from North. We want to rotate the Earth frame by -gpsBearing
-        // so that the new Y axis matches the car's forward direction.
-        val cosB = cos(-gpsBearingRad)
-        val sinB = sin(-gpsBearingRad)
+        // Step 2: Rotate around Up axis by GPS Bearing (clockwise from North)
+        // Car Forward (Y) = East * sin(bearing) + North * cos(bearing)
+        // Car Right (X)   = East * cos(bearing) - North * sin(bearing)
+        val sinB = sin(gpsBearingRad)
+        val cosB = cos(gpsBearingRad)
 
-        val carX = earthX * cosB - earthY * sinB
-        val carY = earthX * sinB + earthY * cosB
-        val carZ = earthZ // Up remains Up
+        val carRight = earthEast * cosB - earthNorth * sinB
+        val carForward = earthEast * sinB + earthNorth * cosB
+        val carUp = earthUp
 
-        return floatArrayOf(carX, carY, carZ)
+        return floatArrayOf(carRight, carForward, carUp)
     }
 }

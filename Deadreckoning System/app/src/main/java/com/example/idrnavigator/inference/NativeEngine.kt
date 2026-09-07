@@ -2,7 +2,11 @@ package com.example.idrnavigator.inference
 
 object NativeEngine {
     init {
-        System.loadLibrary("idr_jni")
+        try {
+            System.loadLibrary("idr_jni")
+        } catch (t: Throwable) {
+            android.util.Log.e("NativeEngine", "Failed to load C++ JNI library: ${t.message}")
+        }
     }
 
     /**
@@ -21,9 +25,13 @@ object NativeEngine {
      */
     external fun injectAiVariance(predictedSpeedKmH: Float, variance: Float)
 
+    external fun injectMagHeading(measuredHeadingRad: Float, variance: Float)
+
     /**
      * Pulls the filtered X, Y, and Heading from C++ back to Kotlin for UI rendering.
      * Returns: [x, y, heading]
      */
     external fun getFilterState(): FloatArray
 }
+
+

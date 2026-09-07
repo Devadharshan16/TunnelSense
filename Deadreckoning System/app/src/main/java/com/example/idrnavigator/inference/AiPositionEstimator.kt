@@ -33,12 +33,15 @@ class AiPositionEstimator(
         const val GRAVITY = CoreDeadReckoner.GRAVITY
     }
 
-    private val inputBuilder = ModelInputBuilder(windowLength = 10, targetSampleIntervalMs = 100L)
+    private val inputBuilder = ModelInputBuilder(windowLength = 200, targetSampleIntervalMs = 5L)
     private val classicalFallback = ClassicalDeadReckoner()
     val ekf = com.example.idr.core.estimator.ErrorStateEkf()
 
     private var smoothedVelocityMps = 0f
     var rawPredictedKmH = 0f
+        private set
+
+    var activeEstimationSource: String = "CLASSICAL (FALLBACK)"
         private set
 
     val lastInferenceLatencyMs: Long
@@ -62,12 +65,13 @@ class AiPositionEstimator(
                 ekf.updateZupt()
                 smoothedVelocityMps = 0f
                 rawPredictedKmH = 0f
+                activeEstimationSource = "STATIONARY (ZUPT)"
 
                 // Allow EKF heading to track in-place rotation while velocity remains clamped
                 val latest = imuWindow.last()
                 val dt = if (imuWindow.size > 1) {
-                    (imuWindow.last().timestamp - imuWindow.first().timestamp).coerceAtLeast(10L) / 1000f
-                } else 0.05f
+                    (imuWindow.last().timestamp - imuWindow.first().timestamp).coerceAtLeast(1_000_000L) / 1_000_000_000f
+                } else 0.005f
                 ekf.predict(axBody = 0f, ayBody = 0f, gzBody = latest.gyroZ, dt = dt)
                 return 0f
             }
@@ -79,6 +83,7 @@ class AiPositionEstimator(
                     val (speedKmH, aiVariance) = onnxRunner.predictVelocityKmH(flatTensor)
                     rawPredictedKmH = speedKmH
                     val rawVelocityMps = rawPredictedKmH / 3.6f
+                    activeEstimationSource = "AI TCN"
 
                     // Check for NaN / Inf
                     val safeVelocityMps = if (rawVelocityMps.isNaN() || rawVelocityMps.isInfinite() || rawVelocityMps < CoreDeadReckoner.VELOCITY_DEADBAND_MPS) {
@@ -88,13 +93,17 @@ class AiPositionEstimator(
                     // 3. Update EKF with body acceleration, NHC, and TCN velocity aiding
                     val latest = imuWindow.last()
                     val dt = if (imuWindow.size > 1) {
-                        (imuWindow.last().timestamp - imuWindow.first().timestamp).coerceAtLeast(10L) / 1000f
-                    } else 0.05f
+                        (imuWindow.last().timestamp - imuWindow.first().timestamp).coerceAtLeast(1_000_000L) / 1_000_000_000f
+                    } else 0.005f
 
                     ekf.predict(axBody = latest.accelY, ayBody = latest.accelX, gzBody = latest.gyroZ, dt = dt)
                     // Feed the exact AI variance dynamically into the Kotlin Math EKF!
                     ekf.updateVelocity(safeVelocityMps, variance = aiVariance)
                     ekf.updateNhc()
+
+                    try {
+                        com.example.idrnavigator.inference.NativeEngine.injectAiVariance(safeVelocityMps, aiVariance)
+                    } catch (t: Throwable) {}
 
                     smoothedVelocityMps = ekf.forwardVelocityMps
                     return smoothedVelocityMps
@@ -106,6 +115,7 @@ class AiPositionEstimator(
 
         // Fallback to classical integration if ONNX is warming up, unavailable, or threw error
         smoothedVelocityMps = classicalFallback.estimateVelocity(imuWindow)
+        activeEstimationSource = "CLASSICAL (FALLBACK)"
         return smoothedVelocityMps
     }
 
@@ -144,3 +154,5 @@ class AiPositionEstimator(
         rawPredictedKmH = 0f
     }
 }
+
+

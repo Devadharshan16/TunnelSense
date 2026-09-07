@@ -46,3 +46,11 @@ Java_com_example_idrnavigator_inference_NativeEngine_injectAiVariance(JNIEnv *en
         g_ekf->updateVelocity(predicted_speed, variance);
     }
 }
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_idrnavigator_inference_NativeEngine_injectMagHeading(JNIEnv *env, jobject thiz, jfloat measured_heading, jfloat variance) {
+    if (g_ekf) {
+        g_ekf->updateHeading(measured_heading, variance);
+    }
+}

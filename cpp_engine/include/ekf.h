@@ -25,6 +25,8 @@ public:
     double getY() const { return nominal_state(1); }
     double getHeading() const { return nominal_state(2); }
 
+    void updateHeading(double measured_heading, double R_heading);
+
 private:
     // 8-Dimensional Nominal State Vector:
     // [0] x (East)
@@ -48,3 +50,8 @@ private:
 };
 
 #endif // EKF_H
+
+
+
+
+

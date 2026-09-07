@@ -41,7 +41,8 @@ data class FusedPosition(
     val insOnlyDurationSec: Float = 0f,
     val deadReckoningMode: DeadReckoningMode = DeadReckoningMode.AI_TCN,
     val aiLatencyMs: Long = 0L,
-    val rawAiVelocityKmH: Float = 0f
+    val rawAiVelocityKmH: Float = 0f,
+    val estimationSource: String = "CLASSICAL"
 )
 
 /**
@@ -203,7 +204,9 @@ class GnssDeficitHandler(
             insOnlyDurationSec = estimate.insOnlyDurationSec,
             deadReckoningMode = deadReckoningMode,
             aiLatencyMs = aiEstimator?.lastInferenceLatencyMs ?: 0L,
-            rawAiVelocityKmH = aiEstimator?.rawPredictedKmH ?: 0f
+            rawAiVelocityKmH = aiEstimator?.rawPredictedKmH ?: 0f,
+            estimationSource = aiEstimator?.activeEstimationSource ?: "CLASSICAL"
         )
     }
 }
+

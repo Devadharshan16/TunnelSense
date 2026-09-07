@@ -1,6 +1,8 @@
 
-pytorch2.14.0+cu130:•™
-‹
+pytorch
+2.14.0+cpu:Ìù
+€
+
 input
 block1.conv.weight
 block1.conv.biasgetitemnode_Conv_31"Conv*
@@ -13,26 +15,27 @@
 !pkg.onnxscript.rewriter.rule_nameFuseBatchNormIntoConvJ∫
 pkg.torch.onnx.class_hierarchyó['train_tcn.TCNVelocityEstimator', 'train_tcn.TCNBlock', 'torch.nn.modules.batchnorm.BatchNorm1d', 'aten._native_batch_norm_legit_no_training.default']J¨
 pkg.torch.onnx.fx_nodeë%_native_batch_norm_legit_no_training : [num_users=1] = call_function[target=torch.ops.aten._native_batch_norm_legit_no_training.default](args = (%conv1d, %p_block1_bn_weight, %p_block1_bn_bias, %b_block1_bn_running_mean, %b_block1_bn_running_var, 0.1, 1e-05), kwargs = {})Ja
-pkg.torch.onnx.name_scopesC['', 'block1', 'block1.bn', '_native_batch_norm_legit_no_training']Jÿ
-pkg.torch.onnx.stack_traceπFile "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 97, in forward
+pkg.torch.onnx.name_scopesC['', 'block1', 'block1.bn', '_native_batch_norm_legit_no_training']J◊
+pkg.torch.onnx.stack_trace∏File "D:\TunnelSense\src\train_tcn.py", line 97, in forward
     x = self.block1(x)
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 72, in forward
+  File "D:\TunnelSense\src\train_tcn.py", line 72, in forward
     return self.relu(self.bn(self.conv(x)))
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\venv\Lib\site-packages\torch\nn\modules\batchnorm.py", line 210, in forward
+  File "D:\TunnelSense\venv\Lib\site-packages\torch\nn\modules\batchnorm.py", line 210, in forward
     return F.batch_norm(
-Ü
+Ö
 getitemrelu	node_relu"ReluJè
 	namespaceÅ: train_tcn.TCNVelocityEstimator/block1: train_tcn.TCNBlock/block1.relu: torch.nn.modules.activation.ReLU/relu: aten.relu.defaultJì
 pkg.torch.onnx.class_hierarchyq['train_tcn.TCNVelocityEstimator', 'train_tcn.TCNBlock', 'torch.nn.modules.activation.ReLU', 'aten.relu.default']JÑ
 pkg.torch.onnx.fx_nodej%relu : [num_users=1] = call_function[target=torch.ops.aten.relu.default](args = (%getitem,), kwargs = {})JC
-pkg.torch.onnx.name_scopes%['', 'block1', 'block1.relu', 'relu']JÔ
-pkg.torch.onnx.stack_trace–File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 97, in forward
+pkg.torch.onnx.name_scopes%['', 'block1', 'block1.relu', 'relu']JÓ
+pkg.torch.onnx.stack_traceœFile "D:\TunnelSense\src\train_tcn.py", line 97, in forward
     x = self.block1(x)
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 72, in forward
+  File "D:\TunnelSense\src\train_tcn.py", line 72, in forward
     return self.relu(self.bn(self.conv(x)))
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\venv\Lib\site-packages\torch\nn\modules\activation.py", line 143, in forward
+  File "D:\TunnelSense\venv\Lib\site-packages\torch\nn\modules\activation.py", line 143, in forward
     return F.relu(input, inplace=self.inplace)
-Â
+‰
+
 relu
 block2.conv.weight
 block2.conv.bias	getitem_3node_Conv_32"Conv*
@@ -45,26 +48,27 @@
 !pkg.onnxscript.rewriter.rule_nameFuseBatchNormIntoConvJ∫
 pkg.torch.onnx.class_hierarchyó['train_tcn.TCNVelocityEstimator', 'train_tcn.TCNBlock', 'torch.nn.modules.batchnorm.BatchNorm1d', 'aten._native_batch_norm_legit_no_training.default']J∞
 pkg.torch.onnx.fx_nodeï%_native_batch_norm_legit_no_training_1 : [num_users=1] = call_function[target=torch.ops.aten._native_batch_norm_legit_no_training.default](args = (%conv1d_1, %p_block2_bn_weight, %p_block2_bn_bias, %b_block2_bn_running_mean, %b_block2_bn_running_var, 0.1, 1e-05), kwargs = {})Jc
-pkg.torch.onnx.name_scopesE['', 'block2', 'block2.bn', '_native_batch_norm_legit_no_training_1']Jÿ
-pkg.torch.onnx.stack_traceπFile "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 98, in forward
+pkg.torch.onnx.name_scopesE['', 'block2', 'block2.bn', '_native_batch_norm_legit_no_training_1']J◊
+pkg.torch.onnx.stack_trace∏File "D:\TunnelSense\src\train_tcn.py", line 98, in forward
     x = self.block2(x)
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 72, in forward
+  File "D:\TunnelSense\src\train_tcn.py", line 72, in forward
     return self.relu(self.bn(self.conv(x)))
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\venv\Lib\site-packages\torch\nn\modules\batchnorm.py", line 210, in forward
+  File "D:\TunnelSense\venv\Lib\site-packages\torch\nn\modules\batchnorm.py", line 210, in forward
     return F.batch_norm(
-î
+ì
 	getitem_3relu_1node_relu_1"ReluJë
 	namespaceÉ: train_tcn.TCNVelocityEstimator/block2: train_tcn.TCNBlock/block2.relu: torch.nn.modules.activation.ReLU/relu_1: aten.relu.defaultJì
 pkg.torch.onnx.class_hierarchyq['train_tcn.TCNVelocityEstimator', 'train_tcn.TCNBlock', 'torch.nn.modules.activation.ReLU', 'aten.relu.default']Jà
 pkg.torch.onnx.fx_noden%relu_1 : [num_users=1] = call_function[target=torch.ops.aten.relu.default](args = (%getitem_3,), kwargs = {})JE
-pkg.torch.onnx.name_scopes'['', 'block2', 'block2.relu', 'relu_1']JÔ
-pkg.torch.onnx.stack_trace–File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 98, in forward
+pkg.torch.onnx.name_scopes'['', 'block2', 'block2.relu', 'relu_1']JÓ
+pkg.torch.onnx.stack_traceœFile "D:\TunnelSense\src\train_tcn.py", line 98, in forward
     x = self.block2(x)
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 72, in forward
+  File "D:\TunnelSense\src\train_tcn.py", line 72, in forward
     return self.relu(self.bn(self.conv(x)))
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\venv\Lib\site-packages\torch\nn\modules\activation.py", line 143, in forward
+  File "D:\TunnelSense\venv\Lib\site-packages\torch\nn\modules\activation.py", line 143, in forward
     return F.relu(input, inplace=self.inplace)
-Á
+Ê
+
 relu_1
 block3.conv.weight
 block3.conv.bias	getitem_6node_Conv_33"Conv*
@@ -77,26 +81,27 @@
 !pkg.onnxscript.rewriter.rule_nameFuseBatchNormIntoConvJ∫
 pkg.torch.onnx.class_hierarchyó['train_tcn.TCNVelocityEstimator', 'train_tcn.TCNBlock', 'torch.nn.modules.batchnorm.BatchNorm1d', 'aten._native_batch_norm_legit_no_training.default']J∞
 pkg.torch.onnx.fx_nodeï%_native_batch_norm_legit_no_training_2 : [num_users=1] = call_function[target=torch.ops.aten._native_batch_norm_legit_no_training.default](args = (%conv1d_2, %p_block3_bn_weight, %p_block3_bn_bias, %b_block3_bn_running_mean, %b_block3_bn_running_var, 0.1, 1e-05), kwargs = {})Jc
-pkg.torch.onnx.name_scopesE['', 'block3', 'block3.bn', '_native_batch_norm_legit_no_training_2']Jÿ
-pkg.torch.onnx.stack_traceπFile "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 99, in forward
+pkg.torch.onnx.name_scopesE['', 'block3', 'block3.bn', '_native_batch_norm_legit_no_training_2']J◊
+pkg.torch.onnx.stack_trace∏File "D:\TunnelSense\src\train_tcn.py", line 99, in forward
     x = self.block3(x)
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 72, in forward
+  File "D:\TunnelSense\src\train_tcn.py", line 72, in forward
     return self.relu(self.bn(self.conv(x)))
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\venv\Lib\site-packages\torch\nn\modules\batchnorm.py", line 210, in forward
+  File "D:\TunnelSense\venv\Lib\site-packages\torch\nn\modules\batchnorm.py", line 210, in forward
     return F.batch_norm(
-î
+ì
 	getitem_6relu_2node_relu_2"ReluJë
 	namespaceÉ: train_tcn.TCNVelocityEstimator/block3: train_tcn.TCNBlock/block3.relu: torch.nn.modules.activation.ReLU/relu_2: aten.relu.defaultJì
 pkg.torch.onnx.class_hierarchyq['train_tcn.TCNVelocityEstimator', 'train_tcn.TCNBlock', 'torch.nn.modules.activation.ReLU', 'aten.relu.default']Jà
 pkg.torch.onnx.fx_noden%relu_2 : [num_users=1] = call_function[target=torch.ops.aten.relu.default](args = (%getitem_6,), kwargs = {})JE
-pkg.torch.onnx.name_scopes'['', 'block3', 'block3.relu', 'relu_2']JÔ
-pkg.torch.onnx.stack_trace–File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 99, in forward
+pkg.torch.onnx.name_scopes'['', 'block3', 'block3.relu', 'relu_2']JÓ
+pkg.torch.onnx.stack_traceœFile "D:\TunnelSense\src\train_tcn.py", line 99, in forward
     x = self.block3(x)
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 72, in forward
+  File "D:\TunnelSense\src\train_tcn.py", line 72, in forward
     return self.relu(self.bn(self.conv(x)))
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\venv\Lib\site-packages\torch\nn\modules\activation.py", line 143, in forward
+  File "D:\TunnelSense\venv\Lib\site-packages\torch\nn\modules\activation.py", line 143, in forward
     return F.relu(input, inplace=self.inplace)
-Ë
+Á
+
 relu_2
 block4.conv.weight
 block4.conv.bias	getitem_9node_Conv_34"Conv*
@@ -109,37 +114,37 @@
 !pkg.onnxscript.rewriter.rule_nameFuseBatchNormIntoConvJ∫
 pkg.torch.onnx.class_hierarchyó['train_tcn.TCNVelocityEstimator', 'train_tcn.TCNBlock', 'torch.nn.modules.batchnorm.BatchNorm1d', 'aten._native_batch_norm_legit_no_training.default']J∞
 pkg.torch.onnx.fx_nodeï%_native_batch_norm_legit_no_training_3 : [num_users=1] = call_function[target=torch.ops.aten._native_batch_norm_legit_no_training.default](args = (%conv1d_3, %p_block4_bn_weight, %p_block4_bn_bias, %b_block4_bn_running_mean, %b_block4_bn_running_var, 0.1, 1e-05), kwargs = {})Jc
-pkg.torch.onnx.name_scopesE['', 'block4', 'block4.bn', '_native_batch_norm_legit_no_training_3']JŸ
-pkg.torch.onnx.stack_trace∫File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 100, in forward
+pkg.torch.onnx.name_scopesE['', 'block4', 'block4.bn', '_native_batch_norm_legit_no_training_3']Jÿ
+pkg.torch.onnx.stack_traceπFile "D:\TunnelSense\src\train_tcn.py", line 100, in forward
     x = self.block4(x)
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 72, in forward
+  File "D:\TunnelSense\src\train_tcn.py", line 72, in forward
     return self.relu(self.bn(self.conv(x)))
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\venv\Lib\site-packages\torch\nn\modules\batchnorm.py", line 210, in forward
+  File "D:\TunnelSense\venv\Lib\site-packages\torch\nn\modules\batchnorm.py", line 210, in forward
     return F.batch_norm(
-ï
+î
 	getitem_9relu_3node_relu_3"ReluJë
 	namespaceÉ: train_tcn.TCNVelocityEstimator/block4: train_tcn.TCNBlock/block4.relu: torch.nn.modules.activation.ReLU/relu_3: aten.relu.defaultJì
 pkg.torch.onnx.class_hierarchyq['train_tcn.TCNVelocityEstimator', 'train_tcn.TCNBlock', 'torch.nn.modules.activation.ReLU', 'aten.relu.default']Jà
 pkg.torch.onnx.fx_noden%relu_3 : [num_users=1] = call_function[target=torch.ops.aten.relu.default](args = (%getitem_9,), kwargs = {})JE
-pkg.torch.onnx.name_scopes'['', 'block4', 'block4.relu', 'relu_3']J
-pkg.torch.onnx.stack_trace—File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 100, in forward
+pkg.torch.onnx.name_scopes'['', 'block4', 'block4.relu', 'relu_3']JÔ
+pkg.torch.onnx.stack_trace–File "D:\TunnelSense\src\train_tcn.py", line 100, in forward
     x = self.block4(x)
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 72, in forward
+  File "D:\TunnelSense\src\train_tcn.py", line 72, in forward
     return self.relu(self.bn(self.conv(x)))
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\venv\Lib\site-packages\torch\nn\modules\activation.py", line 143, in forward
+  File "D:\TunnelSense\venv\Lib\site-packages\torch\nn\modules\activation.py", line 143, in forward
     return F.relu(input, inplace=self.inplace)
-˘
+£
 relu_3
 val_26	unsqueezenode_unsqueeze"	UnsqueezeJÄ
 	namespaces: train_tcn.TCNVelocityEstimator/pool: torch.nn.modules.pooling.AdaptiveAvgPool1d/unsqueeze: aten.unsqueeze.defaultJå
 pkg.torch.onnx.class_hierarchyj['train_tcn.TCNVelocityEstimator', 'torch.nn.modules.pooling.AdaptiveAvgPool1d', 'aten.unsqueeze.default']Jê
 pkg.torch.onnx.fx_nodev%unsqueeze : [num_users=1] = call_function[target=torch.ops.aten.unsqueeze.default](args = (%relu_3, -2), kwargs = {})J7
-pkg.torch.onnx.name_scopes['', 'pool', 'unsqueeze']J‚
-pkg.torch.onnx.stack_trace√File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 101, in forward
+pkg.torch.onnx.name_scopes['', 'pool', 'unsqueeze']Jå
+pkg.torch.onnx.stack_traceÌFile "D:\TunnelSense\src\train_tcn.py", line 101, in forward
     x = self.pool(x)
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\venv\Lib\site-packages\torch\nn\modules\pooling.py", line 1474, in forward
+  File "D:\TunnelSense\venv\Lib\site-packages\torch\nn\modules\pooling.py", line 1474, in forward
     return F.adaptive_avg_pool1d(input, self.output_size)
-Ö
+Ø
 	unsqueeze
 val_29mean	node_mean"
 ReduceMean*
@@ -148,32 +153,32 @@ ReduceMean*
 	namespacee: train_tcn.TCNVelocityEstimator/pool: torch.nn.modules.pooling.AdaptiveAvgPool1d/mean: aten.mean.dimJÉ
 pkg.torch.onnx.class_hierarchya['train_tcn.TCNVelocityEstimator', 'torch.nn.modules.pooling.AdaptiveAvgPool1d', 'aten.mean.dim']Jë
 pkg.torch.onnx.fx_nodew%mean : [num_users=1] = call_function[target=torch.ops.aten.mean.dim](args = (%unsqueeze, [-1, -2], True), kwargs = {})J2
-pkg.torch.onnx.name_scopes['', 'pool', 'mean']J‚
-pkg.torch.onnx.stack_trace√File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 101, in forward
+pkg.torch.onnx.name_scopes['', 'pool', 'mean']Jå
+pkg.torch.onnx.stack_traceÌFile "D:\TunnelSense\src\train_tcn.py", line 101, in forward
     x = self.pool(x)
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\venv\Lib\site-packages\torch\nn\modules\pooling.py", line 1474, in forward
+  File "D:\TunnelSense\venv\Lib\site-packages\torch\nn\modules\pooling.py", line 1474, in forward
     return F.adaptive_avg_pool1d(input, self.output_size)
-÷
+Ä
 mean
 val_26squeezenode_squeeze"SqueezeJx
 	namespacek: train_tcn.TCNVelocityEstimator/pool: torch.nn.modules.pooling.AdaptiveAvgPool1d/squeeze: aten.squeeze.dimJÜ
 pkg.torch.onnx.class_hierarchyd['train_tcn.TCNVelocityEstimator', 'torch.nn.modules.pooling.AdaptiveAvgPool1d', 'aten.squeeze.dim']JÜ
 pkg.torch.onnx.fx_nodel%squeeze : [num_users=1] = call_function[target=torch.ops.aten.squeeze.dim](args = (%mean, -2), kwargs = {})J5
-pkg.torch.onnx.name_scopes['', 'pool', 'squeeze']J‚
-pkg.torch.onnx.stack_trace√File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 101, in forward
+pkg.torch.onnx.name_scopes['', 'pool', 'squeeze']Jå
+pkg.torch.onnx.stack_traceÌFile "D:\TunnelSense\src\train_tcn.py", line 101, in forward
     x = self.pool(x)
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\venv\Lib\site-packages\torch\nn\modules\pooling.py", line 1474, in forward
+  File "D:\TunnelSense\venv\Lib\site-packages\torch\nn\modules\pooling.py", line 1474, in forward
     return F.adaptive_avg_pool1d(input, self.output_size)
-∑
+ã
 squeeze
 val_30	squeeze_1node_squeeze_1"SqueezeJI
 	namespace<: train_tcn.TCNVelocityEstimator/squeeze_1: aten.squeeze.dimJX
 pkg.torch.onnx.class_hierarchy6['train_tcn.TCNVelocityEstimator', 'aten.squeeze.dim']Jã
 pkg.torch.onnx.fx_nodeq%squeeze_1 : [num_users=1] = call_function[target=torch.ops.aten.squeeze.dim](args = (%squeeze, -1), kwargs = {})J/
-pkg.torch.onnx.name_scopes['', 'squeeze_1']Jõ
-pkg.torch.onnx.stack_trace}File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 102, in forward
+pkg.torch.onnx.name_scopes['', 'squeeze_1']Jp
+pkg.torch.onnx.stack_traceRFile "D:\TunnelSense\src\train_tcn.py", line 102, in forward
     x = x.squeeze(-1)
-¢
+Ã
 	squeeze_1
 
 fc1.weight
@@ -185,22 +190,22 @@ fc1.weight
 	namespace`: train_tcn.TCNVelocityEstimator/fc1: torch.nn.modules.linear.Linear/linear: aten.linear.defaultJ}
 pkg.torch.onnx.class_hierarchy[['train_tcn.TCNVelocityEstimator', 'torch.nn.modules.linear.Linear', 'aten.linear.default']J¶
 pkg.torch.onnx.fx_nodeã%linear : [num_users=1] = call_function[target=torch.ops.aten.linear.default](args = (%squeeze_1, %p_fc1_weight, %p_fc1_bias), kwargs = {})J3
-pkg.torch.onnx.name_scopes['', 'fc1', 'linear']Jÿ
-pkg.torch.onnx.stack_traceπFile "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 103, in forward
+pkg.torch.onnx.name_scopes['', 'fc1', 'linear']JÇ
+pkg.torch.onnx.stack_trace„File "D:\TunnelSense\src\train_tcn.py", line 103, in forward
     x = self.fc1(x)
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\venv\Lib\site-packages\torch\nn\modules\linear.py", line 134, in forward
+  File "D:\TunnelSense\venv\Lib\site-packages\torch\nn\modules\linear.py", line 134, in forward
     return F.linear(input, self.weight, self.bias)
-µ
+ﬂ
 linearrelu_4node_relu_4"ReluJq
 	namespaced: train_tcn.TCNVelocityEstimator/relu_fc: torch.nn.modules.activation.ReLU/relu_4: aten.relu.defaultJ}
 pkg.torch.onnx.class_hierarchy[['train_tcn.TCNVelocityEstimator', 'torch.nn.modules.activation.ReLU', 'aten.relu.default']JÖ
 pkg.torch.onnx.fx_nodek%relu_4 : [num_users=1] = call_function[target=torch.ops.aten.relu.default](args = (%linear,), kwargs = {})J7
-pkg.torch.onnx.name_scopes['', 'relu_fc', 'relu_4']J‹
-pkg.torch.onnx.stack_traceΩFile "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 104, in forward
+pkg.torch.onnx.name_scopes['', 'relu_fc', 'relu_4']JÜ
+pkg.torch.onnx.stack_traceÁFile "D:\TunnelSense\src\train_tcn.py", line 104, in forward
     x = self.relu_fc(x)
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\venv\Lib\site-packages\torch\nn\modules\activation.py", line 143, in forward
+  File "D:\TunnelSense\venv\Lib\site-packages\torch\nn\modules\activation.py", line 143, in forward
     return F.relu(input, inplace=self.inplace)
-†
+ 
 relu_4
 
 fc2.weight
@@ -212,12 +217,12 @@ fc2.weight
 	namespaceb: train_tcn.TCNVelocityEstimator/fc2: torch.nn.modules.linear.Linear/linear_1: aten.linear.defaultJ}
 pkg.torch.onnx.class_hierarchy[['train_tcn.TCNVelocityEstimator', 'torch.nn.modules.linear.Linear', 'aten.linear.default']J•
 pkg.torch.onnx.fx_nodeä%linear_1 : [num_users=1] = call_function[target=torch.ops.aten.linear.default](args = (%relu_4, %p_fc2_weight, %p_fc2_bias), kwargs = {})J5
-pkg.torch.onnx.name_scopes['', 'fc2', 'linear_1']Jÿ
-pkg.torch.onnx.stack_traceπFile "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\src\train_tcn.py", line 106, in forward
+pkg.torch.onnx.name_scopes['', 'fc2', 'linear_1']JÇ
+pkg.torch.onnx.stack_trace„File "D:\TunnelSense\src\train_tcn.py", line 106, in forward
     x = self.fc2(x)
-  File "C:\Users\mkrjp\OneDrive\Documents\TunnelSense\TunnelSense\venv\Lib\site-packages\torch\nn\modules\linear.py", line 134, in forward
+  File "D:\TunnelSense\venv\Lib\site-packages\torch\nn\modules\linear.py", line 134, in forward
     return F.linear(input, self.weight, self.bias)
-main_graph*ô@Bblock1.conv.biasJÄtåŸΩY√˙Ω6%=/ÖΩ§1æAyæ∫¥√=yêøºË™Ω ∑ΩÁ$üΩal>çÇΩMÑ<4)HΩÕ}ú∫åÅbΩ»ß=-T÷Ωê[>·˙¨=‘zòΩÉœ“<öO$ºQß◊<â=®D>ÚŸΩ;BâΩwœΩoæﬁø=èr%>öŒ>|Ê)=jà)æ1'æ$zfΩÕ=•buΩX‘Ω≤å˛Ω·á¶<}=#æú®ˇΩπ¬Òº'›ÜΩ·5Ωfabºóﬁ≈ºò<Ù<´ßáΩqòΩq)◊<@ª√<ˇBE<©lé=+|õ=À¡ìΩÎ Ω·„æ˚DvΩ¸ƒN=¶Ëæ*ZÄBblock2.conv.biasj#
+main_graph*ô@Bblock1.conv.biasJÄL¢æÑ«5ΩW÷=¢Ω;\÷ã=ç7=tî=Hà<Ωc$%>ûÓ∞º+ë>û≤Ω– ‚=ùÓº⁄–>√æUÇ=∫J6Ωøu:=KæêõΩMπ=$‹»=¡Ω‘>ñó(>6ƒ†Ωáπß=L\*ΩÈ=G˘ì=á\ >Ü3Ê=µöuΩÃOΩæÓ;º[@ÙΩÎ¶àΩO?ΩºöÌ=Ç∆Ω;ôæœ Ω∞>X5 æ˜ )æbæ®¢∞=´ØŸ=Ñæ—7ßºX∞=;!=Ï˘Áº%òd=Ñ¸«=ÁPˆº¡ÄM=Îæ+b>‰uæ=ı√æSá◊=*ZÄBblock2.conv.biasj#
 locationtiny_tcn_fp32.onnx.dataj
 offset0j
 length512p*^ÄBblock3.conv.biasj#
