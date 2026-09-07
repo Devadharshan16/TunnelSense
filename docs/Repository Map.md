@@ -14,8 +14,8 @@
 |---|---|
 | **Project Title** | AI-ML based Intelligent Dead Reckoning for GNSS-Denied Environments |
 | **Problem Statement**| ISRO Problem Statement 26168 |
-| **Repository Root** | `D:\Dead Reckoning Nav System\Dead-reckoning-system-for-seamless-navigation\` |
-| **Current Phase** | Phase 2 (Core Engine) — Python EKF logic successfully ported to C++ (Eigen). Next: TFLite Integration. |
+| **Repository Root** | `D:\TunnelSense\` |
+| **Current Phase** | Phase 3 (Mobile Deployment) — Integrating the C++ EKF and ONNX AI into the Android App UI. |
 | **Goal** | Train a TCN to predict velocity from IMU data → Fuse with Error-State EKF + NHC → Maintain <10% drift over 1km without GNSS. |
 | **Target Hardware** | Edge Devices (Smartphones / FOG-class Navigation Engines) |
 | **Dataset** | IO-VNBD Dataset (High-frequency Smartphone IMU + Vehicle GPS Ground Truth) |
@@ -26,12 +26,13 @@
 ## 🏗️ TOP-LEVEL DIRECTORY STRUCTURE
 
 ```text
-D:\Dead Reckoning Nav System\Dead-reckoning-system-for-seamless-navigation\
+D:\TunnelSense\
 │
 ├── .git/                          # Git version control
 ├── .gitignore                     # Ignores: venv, __pycache__, data/, results/*.npz
 ├── cpp_engine/                    # C++ Core Engine (EKF & TFLite port)
 ├── data/                          # Raw IO-VNBD datasets (GITIGNORED)
+├── Deadreckoning System/          # Android App Deployment (Frontend & IDR-Core Module)
 ├── docs/                          # Documentation, logs, architecture plans, and THIS map
 ├── results/                       # Outputs, metrics, and plots from pipeline runs
 │   └── processed_data/            # 72 generated ML-ready tensor files (.npz)
@@ -74,7 +75,19 @@ D:\Dead Reckoning Nav System\Dead-reckoning-system-for-seamless-navigation\
 
 ---
 
-### 3. `src/` — Source Code (Pipeline & ML)
+### 3. `Deadreckoning System/` — Mobile App Deployment
+
+> **Purpose**: The final frontend Android application. Consumes the C++ Engine and AI model to render smooth trajectory updates on an offline map when GNSS fails.
+
+| Folder / File | Description |
+|---|---|
+| `app/` | Android application module containing the UI and Map rendering logic (`RouteManager.kt`). |
+| `idr-core/` | The bridge module designed to wrap the `cpp_engine` and ONNX model via JNI. |
+| `build.gradle.kts` | Gradle configuration for the project. |
+
+---
+
+### 4. `src/` — Source Code (Pipeline & ML)
 
 > **Purpose**: Contains all Python scripts for data processing, model training, and filter execution. Must be executed in sequential pipeline order.
 
@@ -90,7 +103,7 @@ D:\Dead Reckoning Nav System\Dead-reckoning-system-for-seamless-navigation\
 
 ---
 
-### 4. `data/` — Datasets
+### 5. `data/` — Datasets
 
 > **Path**: `data/`
 > **Git Status**: ⛔ GITIGNORED (too large)
@@ -104,7 +117,7 @@ D:\Dead Reckoning Nav System\Dead-reckoning-system-for-seamless-navigation\
 
 ---
 
-### 5. `results/` — Pipeline Outputs
+### 6. `results/` — Pipeline Outputs
 
 > **Path**: `results/`
 > **Purpose**: Generated files from running the scripts in `src/`.
