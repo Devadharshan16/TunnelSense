@@ -13,8 +13,12 @@ def load_quantized_model(model_path):
     model = TCNVelocityEstimator(in_features=FEATURES)
     model.eval()
     model.fuse_model()
+    
+    model.train()
     model.qconfig = quant.get_default_qat_qconfig('qnnpack')
     quant.prepare_qat(model, inplace=True)
+    
+    model.eval()
     quant.convert(model, inplace=True)
     
     # Load the INT8 weights safely
