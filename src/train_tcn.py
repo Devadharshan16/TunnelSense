@@ -238,13 +238,35 @@ if __name__ == "__main__":
     model_cpu.qconfig = quant.get_default_qat_qconfig('qnnpack')
     quant.prepare_qat(model_cpu, inplace=True)
     
-    # Load the best checkpoint weights
+    # Load the best checkpoint weights (These still have the FakeQuantize observers intact!)
     model_cpu.load_state_dict(best_model_state)
     
+    # --- ONNX EXPORT (QDQ FORMAT) ---
+    print("\nIntercepting QAT model for ONNX Export...")
+    model_cpu.eval()
+    # Dummy input shape: (Batch=1, Channels=12, Sequence=200)
+    dummy_input = torch.randn(1, FEATURES, 200)
+    onnx_path = os.path.join(model_save_dir, 'tiny_tcn_int8.onnx')
+    
+    try:
+        torch.onnx.export(
+            model_cpu,
+            dummy_input,
+            onnx_path,
+            opset_version=13,  # Opset 13+ is strictly required to export FakeQuantize (INT8) nodes
+            input_names=['input'],
+            output_names=['mu', 'log_var'],
+            do_constant_folding=True
+        )
+        print(f"✅ Success! ONNX model with INT8 QDQ nodes saved to {onnx_path}")
+    except Exception as e:
+        print(f"❌ ONNX Export Failed: {e}")
+        
+    # --- NATIVE PYTORCH CONVERSION ---
     model_cpu.eval()
     quant.convert(model_cpu, inplace=True)
     
     save_path = os.path.join(model_save_dir, 'tiny_tcn_qat_int8.pth')
     torch.save(model_cpu.state_dict(), save_path)
-    print(f"Success! Highly compressed INT8 model saved to {save_path}")
+    print(f"✅ Success! Highly compressed INT8 model saved to {save_path}")
     print(f"Best Validation Loss achieved: {best_val_loss:.4f}")
