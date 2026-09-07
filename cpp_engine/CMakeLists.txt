@@ -21,6 +21,7 @@ include_directories(${eigen_SOURCE_DIR})
 add_executable(idr_engine 
     src/main.cpp 
     src/ekf.cpp
+    src/preprocessor.cpp
 )
 
 # Link Eigen
