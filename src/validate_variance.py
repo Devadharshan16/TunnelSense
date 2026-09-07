@@ -49,11 +49,14 @@ if __name__ == "__main__":
     X = data['X']  # Shape: (N, 200, 12)
     Y = data['Y']  # Shape: (N,)
     
+    # Transpose from (Batch, Sequence, Channels) -> (Batch, Channels, Sequence) for Conv1D
+    X_transposed = np.transpose(X, (0, 2, 1))
+    
     print(f"Loaded {len(X)} windows. Running inference...")
     model = load_quantized_model(model_path)
     
     with torch.no_grad():
-        X_tensor = torch.tensor(X, dtype=torch.float32)
+        X_tensor = torch.tensor(X_transposed, dtype=torch.float32)
         outputs = model(X_tensor)
         
     # Extract Dual-Node Outputs
