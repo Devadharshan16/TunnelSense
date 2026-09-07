@@ -24,14 +24,16 @@ class OnnxVelocityRunner(private val context: Context) : AutoCloseable {
 
     companion object {
         private const val TAG = "OnnxVelocityRunner"
-        private const val MODEL_NAME = "tiny_tcn.onnx"
-        private const val MODEL_DATA_NAME = "tiny_tcn.onnx.data"
+        private const val MODEL_NAME = "tiny_tcn_fp32.onnx"
+        private const val MODEL_DATA_NAME = "tiny_tcn_fp32.onnx.data"
         private const val SCALER_NAME = "scaler_params.json"
 
-        const val INPUT_NODE_NAME = "imu_vibration_input"
-        const val OUTPUT_NODE_NAME = "predicted_velocity"
-        const val NUM_CHANNELS = 11
-        const val WINDOW_LENGTH = 10
+        const val INPUT_NODE_NAME = "input"
+        const val OUTPUT_NODE_NAME = "mu"
+        const val VARIANCE_NODE_NAME = "log_var"
+        
+        const val NUM_CHANNELS = 12
+        const val WINDOW_LENGTH = 200
     }
 
     private val env: OrtEnvironment = OrtEnvironment.getEnvironment()
@@ -113,14 +115,14 @@ class OnnxVelocityRunner(private val context: Context) : AutoCloseable {
     }
 
     /**
-     * Run inference on a normalized flat tensor of shape [1, 11, 10] (110 floats).
-     * Returns the predicted velocity in km/h.
+     * Run inference on a normalized flat tensor of shape [1, 12, 200] (2400 floats).
+     * Returns a Pair: (Predicted Velocity in km/h, Aleatoric Variance)
      */
-    fun predictVelocityKmH(normalizedFlatTensor: FloatArray): Float {
-        val activeSession = session ?: return 0f
+    fun predictVelocityKmH(normalizedFlatTensor: FloatArray): Pair<Float, Float> {
+        val activeSession = session ?: return Pair(0f, 0f)
         if (normalizedFlatTensor.size != NUM_CHANNELS * WINDOW_LENGTH) {
             Log.e(TAG, "Invalid tensor size: ${normalizedFlatTensor.size}, expected ${NUM_CHANNELS * WINDOW_LENGTH}")
-            return 0f
+            return Pair(0f, 0f)
         }
 
         val startTime = System.nanoTime()
@@ -133,27 +135,33 @@ class OnnxVelocityRunner(private val context: Context) : AutoCloseable {
             inputTensor.use { tensor ->
                 val results = activeSession.run(Collections.singletonMap(INPUT_NODE_NAME, tensor))
                 results.use { outputMap ->
-                    val outputTensor = outputMap.get(0) as OnnxTensor
-                    val rawPredictedKmH = outputTensor.floatBuffer.get(0)
+                    // Extract Mu (Velocity)
+                    val muTensor = outputMap.get(OUTPUT_NODE_NAME).get() as OnnxTensor
+                    val rawPredictedKmH = muTensor.floatBuffer.get(0)
+                    
+                    // Extract Log-Variance (Uncertainty)
+                    val varTensor = outputMap.get(VARIANCE_NODE_NAME).get() as OnnxTensor
+                    val logVariance = varTensor.floatBuffer.get(0)
+                    
+                    val actualVariance = kotlin.math.exp(logVariance.toDouble()).toFloat()
+
                     val elapsedNanos = System.nanoTime() - startTime
-                    // Round to nearest millisecond, ensuring at least 1ms when inference actually runs
                     lastInferenceLatencyMs = kotlin.math.max(1L, (elapsedNanos + 500_000L) / 1_000_000L)
 
                     val clampedPrediction = if (rawPredictedKmH < 0f) 0f else rawPredictedKmH
-                    val displayedSpeedMps = clampedPrediction / 3.6f
+                    
                     Log.d(
                         TAG,
-                        "ONNX TinyTCN inference executed: rawOutput=${"%.4f".format(rawPredictedKmH)} km/h, " +
-                            "displayedSpeed=${"%.4f".format(displayedSpeedMps)} m/s, " +
-                            "latency=${"%.2f".format(elapsedNanos / 1_000_000.0)} ms"
+                        "ONNX TCN inference: speed=${"%.4f".format(clampedPrediction)} km/h, " +
+                        "variance=${"%.4f".format(actualVariance)}, latency=${lastInferenceLatencyMs} ms"
                     )
 
-                    clampedPrediction
+                    Pair(clampedPrediction, actualVariance)
                 }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Inference execution error", e)
-            0f
+            Pair(0f, 0f)
         }
     }
 
