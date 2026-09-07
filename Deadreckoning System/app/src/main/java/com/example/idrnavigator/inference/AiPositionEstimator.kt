@@ -33,7 +33,7 @@ class AiPositionEstimator(
         const val GRAVITY = CoreDeadReckoner.GRAVITY
     }
 
-    private val inputBuilder = ModelInputBuilder(windowLength = 200, targetSampleIntervalMs = 5L)
+    private val inputBuilder = ModelInputBuilder(windowLength = 10, targetSampleIntervalMs = 100L)
     private val classicalFallback = ClassicalDeadReckoner()
     val ekf = com.example.idr.core.estimator.ErrorStateEkf()
 
@@ -154,5 +154,6 @@ class AiPositionEstimator(
         rawPredictedKmH = 0f
     }
 }
+
 
 

@@ -32,8 +32,8 @@ class OnnxVelocityRunner(private val context: Context) : AutoCloseable {
         const val OUTPUT_NODE_NAME = "mu"
         const val VARIANCE_NODE_NAME = "log_var"
         
-        const val NUM_CHANNELS = 12
-        const val WINDOW_LENGTH = 200
+        const val NUM_CHANNELS = 11
+        const val WINDOW_LENGTH = 10
     }
 
     private var env: OrtEnvironment? = null
@@ -60,6 +60,12 @@ class OnnxVelocityRunner(private val context: Context) : AutoCloseable {
             val json = JSONObject(jsonString)
             val meanArray = json.getJSONArray("mean")
             val scaleArray = json.getJSONArray("scale")
+
+            if (meanArray.length() != NUM_CHANNELS || scaleArray.length() != NUM_CHANNELS) {
+                Log.e(TAG, "CRITICAL: Scaler JSON channel count ($($meanArray.length())) does not match expected $NUM_CHANNELS!")
+                isModelLoaded = false
+                return
+            }
 
             for (i in 0 until NUM_CHANNELS) {
                 mean[i] = meanArray.getDouble(i).toFloat()
@@ -176,5 +182,7 @@ class OnnxVelocityRunner(private val context: Context) : AutoCloseable {
         }
     }
 }
+
+
 
 
