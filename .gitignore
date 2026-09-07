@@ -1,0 +1,27 @@
+# Datasets
+data/
+*.zip
+*.csv
+
+
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Obsidian workspace
+.obsidian/
+
+# Outputs and large binary files
+results/*.npz

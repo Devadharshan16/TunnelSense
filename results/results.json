@@ -1,0 +1,33 @@
+{
+  "benchmark_met": true,
+  "cases": [
+    {
+      "label": "Naive double integration (no correction)",
+      "final_error_m": 142.31,
+      "max_error_m": 142.31,
+      "distance_travelled_m": 1000.0,
+      "drift_pct": 14.231
+    },
+    {
+      "label": "EKF + NHC only (no velocity/heading aid)",
+      "final_error_m": 268.88,
+      "max_error_m": 268.88,
+      "distance_travelled_m": 1000.0,
+      "drift_pct": 26.889
+    },
+    {
+      "label": "EKF + NHC + velocity-aiding (no heading aid)",
+      "final_error_m": 255.16,
+      "max_error_m": 255.16,
+      "distance_travelled_m": 1000.0,
+      "drift_pct": 25.517
+    },
+    {
+      "label": "Full stack: EKF + NHC + velocity-aiding + magnetometer heading",
+      "final_error_m": 0.8,
+      "max_error_m": 2.54,
+      "distance_travelled_m": 1000.0,
+      "drift_pct": 0.08
+    }
+  ]
+}

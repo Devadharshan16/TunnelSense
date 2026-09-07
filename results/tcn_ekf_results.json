@@ -1,0 +1,10 @@
+{
+  "session": "S-M.csv",
+  "duration_s": 6171.7480000000005,
+  "outage_duration_s": 60.0,
+  "distance_during_outage_m": 7596.700555174771,
+  "final_position_error_m": 366.54277009414227,
+  "max_position_error_m": 366.54277009414227,
+  "drift_pct": 4.825025910024296,
+  "isro_benchmark_met": true
+}
