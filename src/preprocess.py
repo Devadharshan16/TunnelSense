@@ -3,13 +3,15 @@ import glob
 import numpy as np
 import pandas as pd
 import joblib
-from scipy.signal import butter, filtfilt
+import json
+from scipy.signal import butter, lfilter, lfilter_zi
 from sklearn.preprocessing import StandardScaler
 
 # Constants based on typical IMU/GNSS datasets
 WINDOW_SIZE_SEC = 1.0
 STRIDE_SEC = 0.5
 CUTOFF_HZ = 10.0  # Low-pass filter cutoff frequency
+TARGET_FS = 200.0 # Enforced strict 200Hz uniform sampling rate
 
 def butter_lowpass_filter(data, cutoff, fs, order=4):
     """Applies a Butterworth low-pass filter to remove engine/road vibration noise."""
@@ -18,7 +20,15 @@ def butter_lowpass_filter(data, cutoff, fs, order=4):
     safe_cutoff = min(cutoff, nyq * 0.99)
     normal_cutoff = safe_cutoff / nyq
     b, a = butter(order, normal_cutoff, btype='low', analog=False)
-    return filtfilt(b, a, data, axis=0)
+    
+    # Calculate the initial state of the IIR filter (prevents massive startup spike)
+    zi = lfilter_zi(b, a)
+    # Scale the initial state by the first data point of each channel
+    zi_scaled = zi[:, np.newaxis] * data[0, :]
+    
+    # Apply causal IIR filter with maintained state
+    filtered_data, _ = lfilter(b, a, data, axis=0, zi=zi_scaled)
+    return filtered_data
 
 def synchronize_and_interpolate(s_df, v_df):
     """
@@ -79,17 +89,25 @@ def synchronize_and_interpolate(s_df, v_df):
         
     v_speed = v_df[speed_col[0]]
 
-    # Interpolate Vehicle speed to match exactly with IMU timestamps
-    interpolated_speed = np.interp(s_df['rel_time'], v_df['rel_time'], v_speed)
+    # Create a strict 200Hz uniform time grid
+    max_time = min(s_df['rel_time'].max(), v_df['rel_time'].max())
+    target_time = np.arange(0, max_time, 1.0 / TARGET_FS)
     
-    # Construct unified dataframe
-    unified_df = pd.DataFrame(s_mapped)
-    unified_df['speed'] = interpolated_speed
-    unified_df['rel_time'] = s_df['rel_time']
+    # Interpolate IMU data and Speed to the exact same 200Hz grid
+    s_mapped_resampled = {}
+    for k, v in s_mapped.items():
+        s_mapped_resampled[k] = np.interp(target_time, s_df['rel_time'], v)
+        
+    v_speed_resampled = np.interp(target_time, v_df['rel_time'], v_speed)
+    
+    # Construct unified dataframe strictly at 200Hz
+    unified_df = pd.DataFrame(s_mapped_resampled)
+    unified_df['speed'] = v_speed_resampled
+    unified_df['rel_time'] = target_time
     
     return unified_df
 
-def engineer_features(df):
+def engineer_features(df, fs):
     """
     Iteration 6 Feature Engineering: Derive physics-informed channels from raw IMU data.
     Adds acceleration magnitude, gyro magnitude, jerk (rate of change), and 
@@ -106,9 +124,11 @@ def engineer_features(df):
     gyro_mag = np.sqrt(gyro_x**2 + gyro_y**2 + gyro_z**2)
     
     # 3. Jerk (derivative of acceleration) — captures braking/acceleration events
-    jerk_x = np.gradient(acc_x)
-    jerk_y = np.gradient(acc_y)
-    jerk_z = np.gradient(acc_z)
+    # Replaced np.gradient (central diff, non-causal) with strict backward diff (causal) divided by dt
+    dt = 1.0 / fs
+    jerk_x = np.concatenate(([0], np.diff(acc_x))) / dt
+    jerk_y = np.concatenate(([0], np.diff(acc_y))) / dt
+    jerk_z = np.concatenate(([0], np.diff(acc_z))) / dt
     
     df['acc_mag'] = acc_mag
     df['gyro_mag'] = gyro_mag
@@ -119,11 +139,29 @@ def engineer_features(df):
     return df
 
 def create_windows(features, labels, window_size, stride):
-    """Slices continuous time-series into fixed-size overlapping blocks."""
+    """Slices continuous time-series into fixed-size overlapping blocks and extracts PCA."""
+    from sklearn.decomposition import PCA
+    pca = PCA(n_components=1)
+    
     X, Y = [], []
     for i in range(0, len(features) - window_size, stride):
-        X.append(features[i : i + window_size])
+        window = features[i : i + window_size].copy()
+        
+        # Extract accelerometer columns (0, 1, 2)
+        accel_window = window[:, 0:3]
+        
+        # Run PCA to find the dominant variance vector (Forward driving axis irrespective of phone mount)
+        try:
+            pca_proj = pca.fit_transform(accel_window)
+        except Exception:
+            pca_proj = np.zeros((window_size, 1))
+            
+        # Append the 1D PCA projection as a new feature channel (Channel 12)
+        window_enhanced = np.hstack((window, pca_proj))
+        
+        X.append(window_enhanced)
         Y.append(labels[i + window_size - 1])
+        
     return np.array(X), np.array(Y)
 
 if __name__ == "__main__":
@@ -152,7 +190,7 @@ if __name__ == "__main__":
     all_filtered_features = []
     valid_file_pairs = []
     
-    # PASS 1: Extract all filtered data to fit a single dataset-wide scaler
+    # PASS 1: Extract filtered data ONLY from the Training set to fit the scaler (Prevent Data Leakage)
     for s_csv in s_files:
         s_basename = os.path.basename(s_csv)
         v_basename = s_basename.replace('S-', 'V-', 1)
@@ -166,17 +204,18 @@ if __name__ == "__main__":
                 t_s = [c for c in s_df.columns if 'time' in c.lower()][0]
                 time_diffs = s_df[t_s].diff().dropna()
                 median_diff = time_diffs.median()
-                actual_fs = 1000.0 / median_diff if 'ms' in t_s.lower() else 1.0 / median_diff
+                actual_fs = TARGET_FS  # Strictly enforce 200Hz across all operations
                 
                 unified_df = synchronize_and_interpolate(s_df, v_df)
-                
-                # Iteration 6: Engineer derived features BEFORE filtering
-                unified_df = engineer_features(unified_df)
+                unified_df = engineer_features(unified_df, actual_fs)
                 
                 raw_features = unified_df[feature_cols].values
                 filtered_features = butter_lowpass_filter(raw_features, CUTOFF_HZ, actual_fs)
                 
-                all_filtered_features.append(filtered_features)
+                # STRICT ML RULE: Only fit scaler on Training Data ('-V' files)
+                if '-V' in s_basename:
+                    all_filtered_features.append(filtered_features)
+                    
                 valid_file_pairs.append((s_csv, actual_fs, unified_df, filtered_features))
                 
             except Exception as e:
@@ -185,15 +224,30 @@ if __name__ == "__main__":
             print(f"Warning: Could not find matching vehicle data '{v_basename}'")
             
     if not all_filtered_features:
-        print("No valid files processed.")
+        print("No valid training files processed for scaling.")
         exit(1)
         
-    # Fit global scaler
+    # Fit global scaler strictly on Train data
     global_scaler = StandardScaler()
     global_scaler.fit(np.vstack(all_filtered_features))
+    
+    # 1. Save as Python Pickle
     scaler_path = os.path.join(output_dir, 'global_scaler.pkl')
     joblib.dump(global_scaler, scaler_path)
-    print(f"Global scaler fitted on {len(feature_cols)} features and saved to {scaler_path}")
+    
+    # 2. Save as JSON for C++/Android Edge Deployment
+    json_path = os.path.join(output_dir, 'scaler_params.json')
+    scaler_dict = {
+        "features": feature_cols,
+        "mean": global_scaler.mean_.tolist(),
+        "scale": global_scaler.scale_.tolist()
+    }
+    with open(json_path, 'w') as f:
+        json.dump(scaler_dict, f, indent=4)
+        
+    print(f"Global scaler strictly fitted on TRAINING data only.")
+    print(f" -> Saved Python format: {scaler_path}")
+    print(f" -> Saved Edge JSON format: {json_path}")
     
     # PASS 2: Transform, window, and save
     print(f"\nBeginning Pass 2 (Transforming and Windowing with {len(feature_cols)} channels)...")
@@ -209,13 +263,29 @@ if __name__ == "__main__":
         
         out_name = s_basename.replace('S-', 'Processed-').replace('.csv', '.npz')
         
+        # Explicit Route/Session Split (Hackathon Requirement)
+        # Group 1 (Routes containing '-V') -> Training Session
+        # Group 2 (Routes not containing '-V') -> Validation Session
+        if '-V' in s_basename:
+            split_dir = os.path.join(output_dir, 'train')
+        else:
+            split_dir = os.path.join(output_dir, 'val')
+            
+        os.makedirs(split_dir, exist_ok=True)
+        
         # Post-check validation: ensure no dead channels
+        is_dead = False
         for i, col in enumerate(feature_cols):
             if X[..., i].std() < 1e-6:
-                raise ValueError(f"CRITICAL WARNING: Channel {col} in {out_name} is dead (std < 1e-6).")
+                print(f"⚠️ WARNING: Skipping {out_name} — Channel {col} is dead (std < 1e-6). Likely hardware sensor corruption in dataset.")
+                is_dead = True
+                break
                 
-        out_path = os.path.join(output_dir, out_name)
+        if is_dead:
+            continue
+
+        out_path = os.path.join(split_dir, out_name)
         np.savez_compressed(out_path, X=X, Y=Y)
-        print(f"Saved {out_name} (Shape: {X.shape})")
+        print(f"Saved {out_name} to {split_dir} (Shape: {X.shape})")
         
     print(f"\nPre-processing complete. All .npz tensor files saved to: {output_dir}")

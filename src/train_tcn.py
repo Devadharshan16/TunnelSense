@@ -12,7 +12,7 @@ from torch.ao.quantization import QuantStub, DeQuantStub
 BATCH_SIZE = 64
 EPOCHS = 80
 LEARNING_RATE = 1e-3
-FEATURES = 11  # 6 raw IMU + 5 engineered (acc_mag, gyro_mag, jerk_x/y/z)
+FEATURES = 12  # 6 raw IMU + 5 engineered + 1 PCA projection
 EARLY_STOP_PATIENCE = 15  # Stop if val loss doesn't improve for 15 epochs
 
 # --- Dataset Definition ---
@@ -78,7 +78,7 @@ class TCNVelocityEstimator(nn.Module):
         self.fc1 = nn.Linear(256, 128)
         self.relu_fc = nn.ReLU()
         self.dropout = nn.Dropout(0.4)
-        self.fc2 = nn.Linear(128, 1)
+        self.fc2 = nn.Linear(128, 2)  # Output 1: Velocity (mu), Output 2: Log Variance (log_sigma^2)
         self.dequant = DeQuantStub()
 
     def forward(self, x):
@@ -110,13 +110,15 @@ if __name__ == "__main__":
     model_save_dir = os.path.join(base_dir, 'results', 'saved_models')
     os.makedirs(model_save_dir, exist_ok=True)
     
-    all_files = glob.glob(os.path.join(data_dir, '*.npz'))
+    train_dir = os.path.join(data_dir, 'train')
+    val_dir = os.path.join(data_dir, 'val')
     
-    train_files = [f for f in all_files if '-V' in os.path.basename(f)]
-    test_files = [f for f in all_files if '-V' not in os.path.basename(f)]
+    train_files = glob.glob(os.path.join(train_dir, '*.npz'))
+    test_files = glob.glob(os.path.join(val_dir, '*.npz'))
     
-    print(f"Strict Split: Training on {len(train_files)} files (Route/Session Group 1).")
-    print(f"Strict Split: Validating on {len(test_files)} unseen files (Route/Session Group 2).")
+    print(f"Strict Explicit Split: Loading Training Session (Route A) from {train_dir}")
+    print(f"Strict Explicit Split: Loading Validation Session (Route B) from {val_dir}")
+    print(f"Found {len(train_files)} training files and {len(test_files)} validation files.")
     
     train_dataset = IMUDataset(train_files)
     test_dataset = IMUDataset(test_files)
@@ -145,7 +147,17 @@ if __name__ == "__main__":
     
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
-    criterion = nn.MSELoss()
+    # --- Probabilistic Loss Function ---
+    def aleatoric_loss(pred, target):
+        # pred shape: (Batch, 2) -> [mu, log_var]
+        mu = pred[:, 0]
+        log_var = pred[:, 1]
+        # Gaussian Negative Log-Likelihood Loss
+        # Loss = 0.5 * exp(-log_var) * (target - mu)^2 + 0.5 * log_var
+        loss = 0.5 * torch.exp(-log_var) * (target - mu)**2 + 0.5 * log_var
+        return loss.mean()
+        
+    criterion = aleatoric_loss
     
     # --- Early Stopping Setup ---
     best_val_loss = float('inf')
@@ -160,7 +172,7 @@ if __name__ == "__main__":
             batch_x, batch_y = batch_x.to(device), batch_y.to(device)
             optimizer.zero_grad()
             output = model(batch_x)
-            loss = criterion(output.squeeze(), batch_y)
+            loss = criterion(output, batch_y)
             loss.backward()
             optimizer.step()
             total_train_loss += loss.item()
@@ -174,7 +186,7 @@ if __name__ == "__main__":
             for batch_x, batch_y in test_loader:
                 batch_x, batch_y = batch_x.to(device), batch_y.to(device)
                 output = model(batch_x)
-                loss = criterion(output.squeeze(), batch_y)
+                loss = criterion(output, batch_y)
                 total_val_loss += loss.item()
                 
         avg_val_loss = total_val_loss / len(test_loader)

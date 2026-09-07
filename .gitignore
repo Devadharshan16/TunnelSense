@@ -25,3 +25,4 @@ Thumbs.db
 
 # Outputs and large binary files
 results/*.npz
+results/processed_data/
