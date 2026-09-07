@@ -250,9 +250,10 @@ if __name__ == "__main__":
     print(f" -> Saved Edge JSON format: {json_path}")
     
     # PASS 2: Transform, window, and save
-    print(f"\nBeginning Pass 2 (Transforming and Windowing with {len(feature_cols)} channels)...")
-    for s_csv, actual_fs, unified_df, filtered_features in valid_file_pairs:
+    print(f"\nBeginning Pass 2 (Transforming and Windowing with {len(feature_cols)} channels)...", flush=True)
+    for idx, (s_csv, actual_fs, unified_df, filtered_features) in enumerate(valid_file_pairs):
         s_basename = os.path.basename(s_csv)
+        print(f"  [Pass 2/2] ({idx+1}/{len(valid_file_pairs)}) Windowing & PCA: {s_basename}...", flush=True)
         normalized_features = global_scaler.transform(filtered_features)
         
         samples_per_window = int(WINDOW_SIZE_SEC * actual_fs)
