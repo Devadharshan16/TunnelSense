@@ -1,7 +1,9 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cmath>
 #include "ekf.h"
+#include "preprocessor.h"
 #include <onnxruntime_cxx_api.h>
 
 int main() {
@@ -38,13 +40,62 @@ int main() {
         std::cout << "Number of Input Nodes: " << session.GetInputCount() << std::endl;
         std::cout << "Number of Output Nodes: " << session.GetOutputCount() << std::endl;
 
+        // --- PREPROCESSING ---
+        std::cout << "\nInitializing Preprocessor..." << std::endl;
+        TensorPreprocessor preprocessor("../../results/processed_data/scaler_params.json");
+        
+        // Mock a raw IMU buffer (200 samples x 6 channels) representing 1.0 second of driving.
+        // In Android, you will bridge this vector from your CoreGnssDeficitHandler.kt sliding window.
+        std::vector<std::vector<double>> raw_imu(200, std::vector<double>(6, 0.5)); 
+        
+        // Preprocess: filter, engineer physics, normalize, and extract PCA
+        auto processed_tensor = preprocessor.process_window(raw_imu); // Shape: [200][12]
+
+        // --- TENSOR FORMATTING ---
+        // PyTorch/ONNX expects shape: [Batch=1, Channels=12, Sequence=200]
+        // We must flatten the 2D vector in Channel-Major order and cast to Float32.
+        std::vector<float> input_tensor_values(1 * 12 * 200);
+        for (int c = 0; c < 12; ++c) {
+            for (int s = 0; s < 200; ++s) {
+                input_tensor_values[c * 200 + s] = static_cast<float>(processed_tensor[s][c]);
+            }
+        }
+
+        // --- INFERENCE ---
+        Ort::MemoryInfo memory_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
+        std::vector<int64_t> input_shape = {1, 12, 200};
+        
+        Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
+            memory_info, input_tensor_values.data(), input_tensor_values.size(), input_shape.data(), input_shape.size());
+
+        const char* input_names[] = {"input"};
+        const char* output_names[] = {"mu", "log_var"};
+
+        std::cout << "Running TCN Inference..." << std::endl;
+        std::vector<Ort::Value> output_tensors = session.Run(
+            Ort::RunOptions{nullptr}, input_names, &input_tensor, 1, output_names, 2);
+
+        // --- EXTRACT ALEATORIC OUTPUTS ---
+        float* mu_ptr = output_tensors[0].GetTensorMutableData<float>();
+        float* log_var_ptr = output_tensors[1].GetTensorMutableData<float>();
+
+        float predicted_speed = mu_ptr[0];
+        float log_variance = log_var_ptr[0];
+        float actual_variance = std::exp(log_variance); // Convert log space back to physical variance
+
+        std::cout << "\n🏆 --- INFERENCE RESULTS --- 🏆" << std::endl;
+        std::cout << "Predicted Speed (mu): \t" << predicted_speed << " km/h" << std::endl;
+        std::cout << "Aleatoric Variance (\u03C3\u00B2):\t" << actual_variance << std::endl;
+
+        // TODO: ekf.predict(predicted_speed, actual_variance); // Feed AI confidence directly into the math model!
+
     } catch (const Ort::Exception& e) {
         std::cerr << "❌ ONNX Runtime Error: " << e.what() << std::endl;
         return -1;
+    } catch (const std::exception& e) {
+        std::cerr << "❌ C++ Error: " << e.what() << std::endl;
+        return -1;
     }
-
-    // TODO: Load IMU sliding window buffers
-    // TODO: Run inference loop and feed speed (mu) and variance (log_var) into EKF
 
     return 0;
 }
