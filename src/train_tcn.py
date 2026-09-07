@@ -164,11 +164,15 @@ if __name__ == "__main__":
     patience_counter = 0
     best_model_state = None
     
+    from tqdm import tqdm
+    
     for epoch in range(EPOCHS):
         # 1. Training Phase
         model.train()
         total_train_loss = 0
-        for batch_x, batch_y in train_loader:
+        
+        train_pbar = tqdm(train_loader, desc=f"Epoch [{epoch+1}/{EPOCHS}] Train", leave=False)
+        for batch_x, batch_y in train_pbar:
             batch_x, batch_y = batch_x.to(device), batch_y.to(device)
             optimizer.zero_grad()
             output = model(batch_x)
@@ -176,18 +180,22 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
             total_train_loss += loss.item()
+            train_pbar.set_postfix({'loss': f"{loss.item():.4f}"})
             
         avg_train_loss = total_train_loss / len(train_loader)
         
         # 2. Validation Phase (Unseen Routes/Sessions)
         model.eval()
         total_val_loss = 0
+        
+        val_pbar = tqdm(test_loader, desc=f"Epoch [{epoch+1}/{EPOCHS}] Val", leave=False)
         with torch.no_grad():
-            for batch_x, batch_y in test_loader:
+            for batch_x, batch_y in val_pbar:
                 batch_x, batch_y = batch_x.to(device), batch_y.to(device)
                 output = model(batch_x)
                 loss = criterion(output, batch_y)
                 total_val_loss += loss.item()
+                val_pbar.set_postfix({'loss': f"{loss.item():.4f}"})
                 
         avg_val_loss = total_val_loss / len(test_loader)
         
