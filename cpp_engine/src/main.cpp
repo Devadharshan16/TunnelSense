@@ -26,9 +26,9 @@ int main() {
 
         // 3. Define Model Path (Handles Windows wchar_t requirement)
 #ifdef _WIN32
-        const wchar_t* model_path = L"../../results/saved_models/tiny_tcn_int8.onnx";
+        const wchar_t* model_path = L"../../results/saved_models/tiny_tcn_fp32.onnx";
 #else
-        const char* model_path = "../../results/saved_models/tiny_tcn_int8.onnx";
+        const char* model_path = "tiny_tcn_fp32.onnx";
 #endif
 
         // 4. Instantiate the Inference Session
