@@ -65,7 +65,7 @@ class ErrorStateEkf(
         reset()
     }
 
-    fun reset() {
+    fun reset(seedHeading: Float = -1f) {
         val oldHeading = state[2]
         for (i in 0 until STATE_DIM) {
             state[i] = 0f
@@ -74,7 +74,7 @@ class ErrorStateEkf(
                 Q[i][j] = 0f
             }
         }
-        state[2] = oldHeading
+        state[2] = if (seedHeading >= 0f) Math.toRadians(seedHeading.toDouble()).toFloat() else oldHeading
 
         // Initial covariance
         P[0][0] = 1.0f

@@ -32,6 +32,9 @@ class AlignmentEngine {
     // Locked gravity snapshot at the time of calibration
     private val lockedGravity = FloatArray(3)
 
+    // Locked magnetometer snapshot at the time of calibration (used for continuous tilt refresh)
+    private val lockedMag = FloatArray(3)
+
     // Slip detection parameters
     private var sustainedSlipCounter = 0
 
@@ -140,6 +143,9 @@ class AlignmentEngine {
                         lockedGravity[0] = gravity[0]
                         lockedGravity[1] = gravity[1]
                         lockedGravity[2] = gravity[2]
+                        lockedMag[0] = mag[0]
+                        lockedMag[1] = mag[1]
+                        lockedMag[2] = mag[2]
                         isCalibrated = true
                         isMountSlipped = false
                         sustainedSlipCounter = 0
@@ -174,6 +180,15 @@ class AlignmentEngine {
                     }
                 } else {
                     sustainedSlipCounter = (sustainedSlipCounter - 1).coerceAtLeast(0)
+                    
+                    // Option B: Continuously re-estimate tilt from gravity during calm periods
+                    // If we're not slipping, and the vehicle is dynamically calm, refresh the tilt
+                    // portion of rMatrix to absorb small mount flex/drift.
+                    // By using the stale `lockedMag`, yaw/heading remains perfectly locked to the
+                    // original calibration, preventing magnetometer noise from rotating the scene.
+                    if (isCalm) {
+                        SensorManager.getRotationMatrix(rMatrix, null, gravity, lockedMag)
+                    }
                 }
             }
         }

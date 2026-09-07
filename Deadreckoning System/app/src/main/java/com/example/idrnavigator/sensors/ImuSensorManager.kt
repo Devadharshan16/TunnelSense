@@ -5,9 +5,9 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import java.util.ArrayDeque
 
 data class ImuData(
@@ -24,8 +24,12 @@ class ImuSensorManager(context: Context) : SensorEventListener {
     private val gyroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
     private val magSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
 
-    private val _imuDataFlow = MutableStateFlow(ImuData())
-    val imuDataFlow: StateFlow<ImuData> = _imuDataFlow.asStateFlow()
+    private val _imuDataFlow = MutableSharedFlow<ImuData>(
+        replay = 1,
+        extraBufferCapacity = 64,
+        onBufferOverflow = kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
+    )
+    val imuDataFlow: SharedFlow<ImuData> = _imuDataFlow.asSharedFlow()
 
     private var sensorThread: android.os.HandlerThread? = null
     private var sensorHandler: android.os.Handler? = null
@@ -141,19 +145,12 @@ class ImuSensorManager(context: Context) : SensorEventListener {
             val vehGyroYaw = interpGyro[2]
             
             val tsMs = aTime / 1_000_000L
-            _imuDataFlow.value = ImuData(
+            _imuDataFlow.tryEmit(ImuData(
                 accelX = accel.second[0], accelY = accel.second[1], accelZ = accel.second[2],
                 gyroX = interpGyro[0], gyroY = interpGyro[1], gyroZ = interpGyro[2],
                 magX = interpMag[0], magY = interpMag[1], magZ = interpMag[2],
                 timestamp = tsMs
-            )
-            
-            // Stream aligned, synchronized data down to the C++ EKF
-            try {
-                com.example.idrnavigator.inference.NativeEngine.pushImuSample(
-                    vehAccelForward, vehAccelLateral, vehGyroYaw, safeDt
-                )
-            } catch (t: Throwable) {}
+            ))
         }
     }
 

@@ -72,7 +72,7 @@ class ClassicalDeadReckoner : PositionEstimator {
     ): LatLon {
         return core.estimatePosition(lastPosition, velocity, headingDeg, deltaTimeSeconds)
     }
-    override fun reset() {
-        core.reset()
+    override fun reset(seedHeading: Float) {
+        core.reset(seedHeading)
     }
 }

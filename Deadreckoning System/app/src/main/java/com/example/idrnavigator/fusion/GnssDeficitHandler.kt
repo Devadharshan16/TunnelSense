@@ -140,9 +140,9 @@ class GnssDeficitHandler(
             return getActive().estimatePosition(lastPosition, velocityMps, headingDeg, deltaTimeSeconds)
         }
 
-        override fun reset() {
-            classicalEstimator.reset()
-            aiEstimator?.reset()
+        override fun reset(seedHeading: Float) {
+            classicalEstimator.reset(seedHeading)
+            aiEstimator?.reset(seedHeading)
         }
     }
 

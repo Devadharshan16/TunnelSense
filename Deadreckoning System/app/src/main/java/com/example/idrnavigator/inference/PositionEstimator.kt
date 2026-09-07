@@ -14,5 +14,5 @@ interface PositionEstimator {
         headingDeg: Float,
         deltaTimeSeconds: Float
     ): LatLon
-    fun reset()
+    fun reset(seedHeading: Float = -1f)
 }

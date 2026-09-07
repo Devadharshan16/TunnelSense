@@ -69,7 +69,7 @@ class AiPositionEstimator(
                 // Allow EKF heading to track in-place rotation while velocity remains clamped
                 val latest = imuWindow.last()
                 val dt = if (imuWindow.size > 1) {
-                    (imuWindow.last().timestamp - imuWindow.first().timestamp).coerceAtLeast(1_000_000L) / 1_000_000_000f
+                    (imuWindow.last().timestamp - imuWindow.first().timestamp).coerceAtLeast(1L) / 1000f
                 } else 0.005f
                 ekf.predict(axBody = 0f, ayBody = 0f, gzBody = latest.gyroZ, dt = dt)
                 return 0f
@@ -92,7 +92,7 @@ class AiPositionEstimator(
                     // 3. Update EKF with body acceleration, NHC, and TCN velocity aiding
                     val latest = imuWindow.last()
                     val dt = if (imuWindow.size > 1) {
-                        (imuWindow.last().timestamp - imuWindow.first().timestamp).coerceAtLeast(1_000_000L) / 1_000_000_000f
+                        (imuWindow.last().timestamp - imuWindow.first().timestamp).coerceAtLeast(1L) / 1000f
                     } else 0.005f
 
                     ekf.predict(axBody = latest.accelY, ayBody = latest.accelX, gzBody = latest.gyroZ, dt = dt)
@@ -150,10 +150,10 @@ class AiPositionEstimator(
         return (stationaryCount.toFloat() / imuWindow.size) >= CoreDeadReckoner.ZUPT_CONSENSUS_RATIO
     }
 
-    override fun reset() {
+    override fun reset(seedHeading: Float) {
         inputBuilder.reset()
-        ekf.reset()
-        classicalFallback.reset()
+        ekf.reset(seedHeading)
+        classicalFallback.reset(seedHeading)
         smoothedVelocityMps = 0f
         rawPredictedKmH = 0f
     }

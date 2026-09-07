@@ -145,7 +145,7 @@ class CoreGnssDeficitHandler(
                     cumulativeInsDistance = 0f
                     insOnlyStartTime = currentTime
                     consecutiveGoodFixes = 0
-                    positionEstimator.reset() // Clear stale velocity/heading state before integrating fresh
+                    positionEstimator.reset(gpsData.bearingDeg) // Clear stale state but seed heading with GPS bearing
 
                     _positionEstimate.value = IdrPositionEstimate(
                         lat = handoffPos.lat,
@@ -265,7 +265,7 @@ class CoreGnssDeficitHandler(
                     insOnlyStartTime = 0L
                     cumulativeInsDistance = 0f
                     transitionStartInsPos = null
-                    positionEstimator.reset()
+                    positionEstimator.reset(-1f)
 
                     _positionEstimate.value = IdrPositionEstimate(
                         lat = gpsData.lat,
