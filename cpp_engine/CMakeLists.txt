@@ -24,5 +24,12 @@ add_executable(idr_engine
     src/preprocessor.cpp
 )
 
+# JNI Shared Library (for Android NDK)
+add_library(idr_jni SHARED
+    src/jni_bridge.cpp
+    src/ekf.cpp
+    src/preprocessor.cpp
+)
+
 # Link Eigen
 target_link_libraries(idr_engine PRIVATE eigen)
