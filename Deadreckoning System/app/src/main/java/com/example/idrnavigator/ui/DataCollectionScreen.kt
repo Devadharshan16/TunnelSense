@@ -49,7 +49,7 @@ fun DataCollectionScreen(
     LaunchedEffect(isRecording) {
         if (!isRecording) return@LaunchedEffect
         try {
-            withContext(Dispatchers.IO) {
+            withContext(Dispatchers.IO.limitedParallelism(2)) {
                 viewModel.alignedImuFlow.collect { currentImu ->
                     csvLogger.logRow(currentImu, viewModel.gnssManager.gpsDataFlow.value)
                 }
@@ -68,6 +68,16 @@ fun DataCollectionScreen(
             val seconds = (elapsed / 1000) % 60
             elapsedTimeStr = String.format(Locale.US, "%02d:%02d", minutes, seconds)
             delay(100)
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            if (isRecording) {
+                isRecording = false
+                SensorForegroundService.stop(context)
+                csvLogger.stop()
+            }
         }
     }
 
@@ -205,7 +215,11 @@ fun DataCollectionScreen(
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = if (uiState.deadReckoningMode == com.example.idrnavigator.fusion.DeadReckoningMode.AI_TCN) {
-                            "Model: tiny_tcn.onnx (ONNX Runtime Mobile)\nInput Tensor: [1, 11, 10] @ 10Hz | Latency: ${uiState.aiLatencyMs} ms\nRaw Predicted Speed: ${"%.1f".format(uiState.rawAiVelocityKmH)} km/h"
+                            if (uiState.isAiModelLoaded) {
+                                "Model: tiny_tcn.onnx (ONNX Runtime Mobile)\nInput Tensor: [1, 11, 10] @ 10Hz | Latency: ${uiState.aiLatencyMs} ms\nRaw Predicted Speed: ${"%.1f".format(uiState.rawAiVelocityKmH)} km/h"
+                            } else {
+                                "AI model unavailable; using Classical Strapdown"
+                            }
                         } else {
                             "Model: Classical Strapdown (Forward Accel Integration + 3D ZUPT)\nHeading: Gyro Z Integration + Mag Filter"
                         },

@@ -185,6 +185,11 @@ class GnssDeficitHandler(
             IdrGnssState.INS_ONLY -> GnssState.INS_ONLY
         }
 
+        // Keep AI TCN model warm during GNSS_ACTIVE so buffer is ready and HUD displays live latency & predictions
+        if (state == GnssState.GNSS_ACTIVE && deadReckoningMode == DeadReckoningMode.AI_TCN && aiEstimator?.isModelLoaded == true) {
+            aiEstimator?.estimateVelocity(listOf(imuData))
+        }
+
         _fusedPosition.value = FusedPosition(
             lat = estimate.lat,
             lon = estimate.lon,

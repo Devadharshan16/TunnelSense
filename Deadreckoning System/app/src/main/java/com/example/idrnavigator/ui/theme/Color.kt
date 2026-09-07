@@ -10,7 +10,7 @@ val CockpitDivider = Color(0xFF2A2E35)
 
 val GnssActive = Color(0xFF4FD8E8)         // Cyan — GPS fused active
 val GnssDegraded = Color(0xFFF5A623)       // Amber — Transitioning
-val InsDeadReckoning = Color(0xFF8E6CFF)   // Electric Violet — Pure INS dead reckoning
+val InsDeadReckoning = Color(0xFF7C5CFF)   // Violet (#7C5CFF) — Pure INS dead reckoning
 val VehicleMarkerAccent = Color(0xFF4FD8E8)
 
 // Drift warning colors (INS mode running too long)

@@ -61,6 +61,7 @@ class CoreGnssDeficitHandler(
     private var lastInsUpdateTime = 0L
     private var cumulativeInsDistance = 0f
     private var insOnlyStartTime = 0L
+    private var lastHeadingUpdateTime = 0L
 
     private var transitionStartTime = 0L
     private var transitionStartInsPos: IdrLatLon? = null
@@ -78,6 +79,7 @@ class CoreGnssDeficitHandler(
         lastInsUpdateTime = 0L
         cumulativeInsDistance = 0f
         insOnlyStartTime = 0L
+        lastHeadingUpdateTime = 0L
         transitionStartTime = 0L
         transitionStartInsPos = null
         positionEstimator.reset()
@@ -102,6 +104,18 @@ class CoreGnssDeficitHandler(
             imuWindow.removeAt(0)
         }
 
+        val headingDt = if (lastHeadingUpdateTime > 0L) {
+            ((currentTime - lastHeadingUpdateTime).coerceAtLeast(0L) / 1000f).coerceAtMost(0.5f)
+        } else {
+            0f
+        }
+        val estimatedHeading = if (headingDt > 0f) {
+            positionEstimator.estimateHeading(listOf(imuData), headingDt, magHeadingDeg)
+        } else {
+            positionEstimator.estimateHeading(emptyList(), 0f, magHeadingDeg)
+        }
+        lastHeadingUpdateTime = currentTime
+
         val isGpsGood = gpsData.hasFix && gpsData.accuracyMeters <= GPS_ACCURACY_THRESHOLD
 
         if (lastGoodGpsTime == 0L && isGpsGood) {
@@ -111,9 +125,9 @@ class CoreGnssDeficitHandler(
 
         when (currentState) {
             IdrGnssState.GNSS_ACTIVE -> {
-                val timeSinceGoodGps = currentTime - lastGoodGpsTime
-                if (!isGpsGood && timeSinceGoodGps > GPS_LOSS_TIMEOUT_MS) {
-                    val handoffPos = lastGoodLatLon ?: IdrLatLon(gpsData.lat, gpsData.lon)
+                val timeSinceGoodGps = if (lastGoodGpsTime > 0L) currentTime - lastGoodGpsTime else 0L
+                if (lastGoodLatLon != null && !isGpsGood && timeSinceGoodGps > GPS_LOSS_TIMEOUT_MS) {
+                    val handoffPos = lastGoodLatLon!!
                     logger.d(
                         TAG,
                         "▼ GNSS_ACTIVE → INS_ONLY | " +
@@ -153,9 +167,9 @@ class CoreGnssDeficitHandler(
                         lat = gpsData.lat,
                         lon = gpsData.lon,
                         speedMps = gpsData.speedMps,
-                        headingDeg = gpsData.bearingDeg,
+                        headingDeg = estimatedHeading,
                         state = IdrGnssState.GNSS_ACTIVE,
-                        driftMeters = gpsData.accuracyMeters,
+                        driftMeters = 0f,
                         gpsAccuracy = gpsData.accuracyMeters,
                         satelliteCount = gpsData.satelliteCount,
                         hasFix = gpsData.hasFix,
@@ -248,13 +262,30 @@ class CoreGnssDeficitHandler(
                     lastGoodGpsTime = currentTime
                     lastGoodLatLon = IdrLatLon(gpsData.lat, gpsData.lon)
                     insOnlyStartTime = 0L
-                } else {
+                    cumulativeInsDistance = 0f
+                    transitionStartInsPos = null
+                    positionEstimator.reset()
+
+                    _positionEstimate.value = IdrPositionEstimate(
+                        lat = gpsData.lat,
+                        lon = gpsData.lon,
+                        speedMps = gpsData.speedMps,
+                        headingDeg = estimatedHeading,
+                        state = IdrGnssState.GNSS_ACTIVE,
+                        driftMeters = 0f,
+                        gpsAccuracy = gpsData.accuracyMeters,
+                        satelliteCount = gpsData.satelliteCount,
+                        hasFix = gpsData.hasFix,
+                        insOnlyDurationSec = 0f
+                    )
+                } else if (gpsData.hasFix && gpsData.accuracyMeters <= GPS_ACCURACY_THRESHOLD) {
                     val start = transitionStartInsPos
                     val target = IdrLatLon(gpsData.lat, gpsData.lon)
 
                     if (start != null) {
                         val blendedLat = start.lat + (target.lat - start.lat) * progress
                         val blendedLon = start.lon + (target.lon - start.lon) * progress
+                        currentInsPosition = IdrLatLon(blendedLat, blendedLon)
 
                         _positionEstimate.value = IdrPositionEstimate(
                             lat = blendedLat,

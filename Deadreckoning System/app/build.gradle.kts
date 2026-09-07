@@ -53,6 +53,7 @@ dependencies {
         exclude(group = "org.tensorflow", module = "tensorflow-lite-support-api")
     }
     implementation("org.osmdroid:osmdroid-android:6.1.18")
+    implementation("com.github.MKergall:osmbonuspack:6.9.0")
     implementation("com.opencsv:opencsv:5.9")
     implementation(project(":idr-core"))
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.19.2")

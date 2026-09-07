@@ -43,6 +43,11 @@ fun main(args: Array<String>) {
     println("INS-Only (Deficit)     : ${summary.insOnlyRows}")
     println("Transitioning Blends   : ${summary.transitioningRows}")
     println("Max Estimated Drift    : ${"%.2f".format(summary.maxDriftMeters)} m")
+    println("GPS Distance Traveled  : ${"%.2f".format(summary.gpsDistanceMeters)} m")
+    println("Classical Final Error  : ${"%.2f".format(summary.finalGpsErrorMeters)} m")
+    println("Classical Drift        : ${"%.2f".format(summary.driftPercentOfGpsDistance)}% of GPS distance")
+    println("AI TCN Final Error     : unavailable (AI estimator is Android/ONNX-only)")
+    println("AI TCN Drift           : unavailable (AI estimator is Android/ONNX-only)")
     println("Final Position         : (${summary.finalLat}, ${summary.finalLon})")
     println("===================================================\n")
 }

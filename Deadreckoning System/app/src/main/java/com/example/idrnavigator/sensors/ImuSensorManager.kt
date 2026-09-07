@@ -30,42 +30,52 @@ class ImuSensorManager(context: Context) : SensorEventListener {
     private var currentGyro = FloatArray(3)
     private var currentMag = FloatArray(3)
 
+    private var sensorThread: android.os.HandlerThread? = null
+    private var sensorHandler: android.os.Handler? = null
+
+    @Synchronized
     fun start() {
-        accelSensor?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
-        gyroSensor?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
-        magSensor?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
+        if (sensorThread == null) {
+            sensorThread = android.os.HandlerThread(
+                "ImuSensorThread",
+                android.os.Process.THREAD_PRIORITY_MORE_FAVORABLE
+            ).apply { start() }
+            sensorHandler = android.os.Handler(sensorThread!!.looper)
+        }
+        val handler = sensorHandler
+        accelSensor?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME, handler) }
+        gyroSensor?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME, handler) }
+        magSensor?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME, handler) }
     }
 
+    @Synchronized
     fun stop() {
         sensorManager.unregisterListener(this)
+        sensorThread?.quitSafely()
+        sensorThread = null
+        sensorHandler = null
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
         if (event == null) return
 
-        var updated = false
         when (event.sensor.type) {
             Sensor.TYPE_ACCELEROMETER -> {
                 System.arraycopy(event.values, 0, currentAccel, 0, 3)
-                updated = true
+                // Accelerometer serves as the master synchronization epoch for dead reckoning
+                _imuDataFlow.value = ImuData(
+                    accelX = currentAccel[0], accelY = currentAccel[1], accelZ = currentAccel[2],
+                    gyroX = currentGyro[0], gyroY = currentGyro[1], gyroZ = currentGyro[2],
+                    magX = currentMag[0], magY = currentMag[1], magZ = currentMag[2],
+                    timestamp = event.timestamp / 1_000_000L
+                )
             }
             Sensor.TYPE_GYROSCOPE -> {
                 System.arraycopy(event.values, 0, currentGyro, 0, 3)
-                updated = true
             }
             Sensor.TYPE_MAGNETIC_FIELD -> {
                 System.arraycopy(event.values, 0, currentMag, 0, 3)
-                updated = true
             }
-        }
-
-        if (updated) {
-            _imuDataFlow.value = ImuData(
-                accelX = currentAccel[0], accelY = currentAccel[1], accelZ = currentAccel[2],
-                gyroX = currentGyro[0], gyroY = currentGyro[1], gyroZ = currentGyro[2],
-                magX = currentMag[0], magY = currentMag[1], magZ = currentMag[2],
-                timestamp = System.currentTimeMillis()
-            )
         }
     }
 

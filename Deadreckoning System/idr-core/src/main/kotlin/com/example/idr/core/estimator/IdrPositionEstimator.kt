@@ -36,16 +36,19 @@ class CoreDeadReckoner(
     companion object {
         private const val TAG = "CoreDeadReckoner"
 
-        /** Acceleration magnitude deviation from 9.81 m/s² below which device is stationary */
-        const val ZUPT_ACCEL_MAGNITUDE_THRESHOLD = 0.8f
+        /** Acceleration magnitude deviation from 9.81 m/s² below which device is translationally stationary */
+        const val ZUPT_ACCEL_MAGNITUDE_THRESHOLD = 0.85f
 
-        /** Gyroscope magnitude (rad/s) below which device is stationary */
+        /** Gyroscope magnitude (rad/s) below which device is also rotationally stationary */
         const val ZUPT_GYRO_MAGNITUDE_THRESHOLD = 0.15f
 
         /** Percentage of window samples required to agree before ZUPT engages */
-        const val ZUPT_CONSENSUS_RATIO = 0.85f
+        const val ZUPT_CONSENSUS_RATIO = 0.80f
 
         const val GRAVITY = 9.81f
+
+        /** Velocities below this threshold (~0.54 km/h) are treated as sensor noise and clamped to 0 */
+        const val VELOCITY_DEADBAND_MPS = 0.15f
 
         /** Magnetometer complementary filter correction weight */
         const val MAG_COMPLEMENTARY_WEIGHT = 0.02f
@@ -73,14 +76,9 @@ class CoreDeadReckoner(
             )
             val accelDeviation = abs(accelMag - GRAVITY)
 
-            val gyroMag = sqrt(
-                data.gyroX * data.gyroX +
-                data.gyroY * data.gyroY +
-                data.gyroZ * data.gyroZ
-            )
-
-            if (accelDeviation < ZUPT_ACCEL_MAGNITUDE_THRESHOLD &&
-                gyroMag < ZUPT_GYRO_MAGNITUDE_THRESHOLD) {
+            // Translational stationarity depends purely on linear acceleration deviation from 1g.
+            // Even if the phone/vehicle rotates in place (high gyro), translational velocity is zero.
+            if (accelDeviation < ZUPT_ACCEL_MAGNITUDE_THRESHOLD) {
                 stationarySamples++
             }
         }
@@ -112,8 +110,12 @@ class CoreDeadReckoner(
                 val avgAccel = imuWindow.map { it.accelY }.average().toFloat()
                 currentVelocity += avgAccel * dtSec
 
-                if (currentVelocity < 0) currentVelocity = 0f
+                if (currentVelocity < VELOCITY_DEADBAND_MPS) currentVelocity = 0f
             }
+        }
+
+        if (currentVelocity < VELOCITY_DEADBAND_MPS) {
+            currentVelocity = 0f
         }
 
         return currentVelocity
@@ -154,6 +156,10 @@ class CoreDeadReckoner(
         headingDeg: Float,
         deltaTimeSeconds: Float
     ): IdrLatLon {
+        if (velocityMps <= 0f || deltaTimeSeconds <= 0f) {
+            return lastPosition
+        }
+
         val distance = velocityMps * deltaTimeSeconds
         val headingRad = Math.toRadians(headingDeg.toDouble())
 

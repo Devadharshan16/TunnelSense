@@ -27,7 +27,7 @@ class VehicleMarker(private val mapView: MapView) : Marker(mapView) {
         // State colors matching the HUD status pill
         val COLOR_GNSS_ACTIVE: Int = Color.parseColor("#4FD8E8")   // High-confidence GPS fused
         val COLOR_TRANSITIONING: Int = Color.parseColor("#F5A623") // Transitional handoff
-        val COLOR_INS_ONLY: Int = Color.parseColor("#8E6CFF")      // Pure INS dead reckoning
+        val COLOR_INS_ONLY: Int = Color.parseColor("#7C5CFF")      // Pure INS dead reckoning (Violet)
 
         private const val COLOR_ANIMATION_DURATION_MS = 400L
     }
@@ -35,6 +35,7 @@ class VehicleMarker(private val mapView: MapView) : Marker(mapView) {
     private var currentGnssState: GnssState = GnssState.GNSS_ACTIVE
     private var currentColorInt: Int = COLOR_GNSS_ACTIVE
     private var colorAnimator: ValueAnimator? = null
+    private var positionAnimator: ValueAnimator? = null
 
     // Reusable cached bitmap and canvas to prevent GC pressure
     private val density: Float = mapView.context.resources.displayMetrics.density
@@ -141,14 +142,35 @@ class VehicleMarker(private val mapView: MapView) : Marker(mapView) {
     /**
      * Update location and heading rotation independently of color animation.
      */
-    fun updatePositionAndHeading(newGeoPoint: GeoPoint, newHeading: Float) {
+    fun updatePositionAndHeading(newGeoPoint: GeoPoint, newHeading: Float): Boolean {
         if (position.latitude == newGeoPoint.latitude &&
             position.longitude == newGeoPoint.longitude &&
             rotation == newHeading
         ) {
-            return
+            return false
         }
-        position = newGeoPoint
         rotation = newHeading
+
+        val startPoint = position
+        if (startPoint.latitude == 0.0 && startPoint.longitude == 0.0) {
+            position = newGeoPoint
+            return true
+        }
+
+        positionAnimator?.cancel()
+        positionAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 100L
+            interpolator = AccelerateDecelerateInterpolator()
+            addUpdateListener { animator ->
+                val progress = animator.animatedValue as Float
+                position = GeoPoint(
+                    startPoint.latitude + (newGeoPoint.latitude - startPoint.latitude) * progress,
+                    startPoint.longitude + (newGeoPoint.longitude - startPoint.longitude) * progress
+                )
+                mapView.invalidate()
+            }
+            start()
+        }
+        return true
     }
 }

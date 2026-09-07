@@ -22,6 +22,8 @@ class CsvLogger(private val context: Context) {
     val savedFile: File?
         get() = currentFile
 
+    private var bufferedWriter: java.io.BufferedWriter? = null
+
     fun start(): File? {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val fileName = "drive_log_$timestamp.csv"
@@ -34,13 +36,16 @@ class CsvLogger(private val context: Context) {
         currentFile = File(directory, fileName)
         
         try {
-            csvWriter = CSVWriter(FileWriter(currentFile))
+            val writer = java.io.BufferedWriter(FileWriter(currentFile), 64 * 1024)
+            bufferedWriter = writer
+            csvWriter = CSVWriter(writer)
             val header = arrayOf(
                 "timestamp_ms", "accel_x", "accel_y", "accel_z",
                 "gyro_x", "gyro_y", "gyro_z", "mag_x", "mag_y", "mag_z",
                 "gps_lat", "gps_lon", "gps_accuracy", "gps_speed"
             )
             csvWriter?.writeNext(header)
+            bufferedWriter?.flush()
             loggedRowCount = 0
             return currentFile
         } catch (e: Exception) {
@@ -65,10 +70,10 @@ class CsvLogger(private val context: Context) {
         csvWriter?.writeNext(row)
         loggedRowCount++
 
-        // Flush every 50 rows to prevent data loss on crash
-        if (loggedRowCount % 50 == 0) {
+        // Flush buffer every 100 rows (~2 seconds at 50Hz)
+        if (loggedRowCount % 100 == 0) {
             try {
-                csvWriter?.flush()
+                bufferedWriter?.flush()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -77,10 +82,15 @@ class CsvLogger(private val context: Context) {
 
     fun stop() {
         try {
+            csvWriter?.flush()
+            bufferedWriter?.flush()
             csvWriter?.close()
+            bufferedWriter?.close()
         } catch (e: Exception) {
             e.printStackTrace()
+        } finally {
+            csvWriter = null
+            bufferedWriter = null
         }
-        csvWriter = null
     }
 }
