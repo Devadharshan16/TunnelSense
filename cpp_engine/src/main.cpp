@@ -87,7 +87,12 @@ int main() {
         std::cout << "Predicted Speed (mu): \t" << predicted_speed << " km/h" << std::endl;
         std::cout << "Aleatoric Variance (\u03C3\u00B2):\t" << actual_variance << std::endl;
 
-        // TODO: ekf.predict(predicted_speed, actual_variance); // Feed AI confidence directly into the math model!
+        // DYNAMIC SENSOR FUSION: 
+        // Feed the AI's speed and its real-time confidence (variance) directly into the Kalman Filter!
+        // The EKF uses 'actual_variance' as its Measurement Noise Covariance (R).
+        ekf.updateVelocity(predicted_speed, actual_variance);
+        
+        std::cout << "\n✅ EKF State Updated! Current Filter Position: (" << ekf.getX() << ", " << ekf.getY() << ")" << std::endl;
 
     } catch (const Ort::Exception& e) {
         std::cerr << "❌ ONNX Runtime Error: " << e.what() << std::endl;
