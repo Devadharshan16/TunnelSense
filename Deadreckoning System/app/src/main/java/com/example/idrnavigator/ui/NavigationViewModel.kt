@@ -69,8 +69,12 @@ data class NavigationUiState(
     val isSensorCalibrated: Boolean = false,
     val sensorCalibrationProgress: Float = 0f,
     val sensorCalibrationCountdown: Int = 0,
-    val calibrationMovementDetected: Boolean = false,
-    val isAiModelLoaded: Boolean = false
+    val isAiModelLoaded: Boolean = false,
+    
+    // C++ EKF Map-Matched Coordinates
+    val ekfX: Float = 0f,
+    val ekfY: Float = 0f,
+    val ekfHeading: Float = 0f
 )
 
 class NavigationViewModel(
@@ -100,7 +104,7 @@ class NavigationViewModel(
     companion object {
         const val MAX_POLYLINE_POINTS = 3000
         const val MIN_POINT_DISTANCE_METERS = 2.0
-        const val UI_THROTTLE_SAMPLE_MS = 50L // ~20Hz update rate for smooth Compose rendering
+        const val UI_THROTTLE_SAMPLE_MS = 100L // strictly 10Hz update rate for smooth UI Compose rendering
     }
 
     // Map orientation mode
@@ -163,10 +167,18 @@ class NavigationViewModel(
         }
         .sample(UI_THROTTLE_SAMPLE_MS)
         .map { alignedImu ->
+            // Pull the latest filtered coordinates from the C++ EKF at 10Hz!
+            val filterState = try {
+                com.example.idrnavigator.inference.NativeEngine.getFilterState()
+            } catch (e: Exception) {
+                floatArrayOf(0f, 0f, 0f)
+            }
+            
             buildUiState(
                 fused = gnssDeficitHandler.fusedPosition.value,
                 imu = alignedImu,
-                history = _locationHistory.value
+                history = _locationHistory.value,
+                ekfState = filterState
             )
         }
         .flowOn(Dispatchers.Default)
@@ -251,7 +263,7 @@ class NavigationViewModel(
         settings.edit().putBoolean("course_up_mode", _isCourseUpMode.value).apply()
     }
 
-    private fun buildUiState(fused: FusedPosition, imu: ImuData, history: List<GeoPoint>): NavigationUiState {
+    private fun buildUiState(fused: FusedPosition, imu: ImuData, history: List<GeoPoint>, ekfState: FloatArray = floatArrayOf(0f, 0f, 0f)): NavigationUiState {
         val headingDeg = fused.headingDeg.roundToInt()
 
         val headingCardinal = when {
@@ -310,8 +322,10 @@ class NavigationViewModel(
             isSensorCalibrated = calib.isCalibrated,
             sensorCalibrationProgress = calib.progress,
             sensorCalibrationCountdown = calib.secondsRemaining,
-            calibrationMovementDetected = calib.movementDetected,
-            isAiModelLoaded = aiEstimator.isModelLoaded
+            isAiModelLoaded = aiEstimator.isModelLoaded,
+            ekfX = ekfState.getOrElse(0) { 0f },
+            ekfY = ekfState.getOrElse(1) { 0f },
+            ekfHeading = ekfState.getOrElse(2) { 0f }
         )
     }
 
