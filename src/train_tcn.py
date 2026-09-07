@@ -241,6 +241,10 @@ if __name__ == "__main__":
     # Load the best checkpoint weights (These still have the FakeQuantize observers intact!)
     model_cpu.load_state_dict(best_model_state)
     
+    # --- SAFEGUARD: Save the uncompressed QAT weights just in case! ---
+    qat_save_path = os.path.join(model_save_dir, 'tiny_tcn_qat_fakequant.pth')
+    torch.save(best_model_state, qat_save_path)
+    
     # --- ONNX EXPORT (QDQ FORMAT) ---
     print("\nIntercepting QAT model for ONNX Export...")
     model_cpu.eval()
