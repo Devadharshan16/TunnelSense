@@ -76,7 +76,8 @@ class AiPositionEstimator(
             if (onnxRunner.isModelLoaded && inputBuilder.isReady()) {
                 val flatTensor = inputBuilder.buildNormalizedFlatTensor(onnxRunner.mean, onnxRunner.scale)
                 if (flatTensor != null) {
-                    rawPredictedKmH = onnxRunner.predictVelocityKmH(flatTensor)
+                    val (speedKmH, aiVariance) = onnxRunner.predictVelocityKmH(flatTensor)
+                    rawPredictedKmH = speedKmH
                     val rawVelocityMps = rawPredictedKmH / 3.6f
 
                     // Check for NaN / Inf
@@ -91,7 +92,8 @@ class AiPositionEstimator(
                     } else 0.05f
 
                     ekf.predict(axBody = latest.accelY, ayBody = latest.accelX, gzBody = latest.gyroZ, dt = dt)
-                    ekf.updateVelocity(safeVelocityMps, variance = com.example.idr.core.estimator.ErrorStateEkf.DEFAULT_R_VEL)
+                    // Feed the exact AI variance dynamically into the Kotlin Math EKF!
+                    ekf.updateVelocity(safeVelocityMps, variance = aiVariance)
                     ekf.updateNhc()
 
                     smoothedVelocityMps = ekf.forwardVelocityMps

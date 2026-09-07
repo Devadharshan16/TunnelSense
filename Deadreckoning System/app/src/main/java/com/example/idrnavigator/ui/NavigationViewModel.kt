@@ -69,6 +69,7 @@ data class NavigationUiState(
     val isSensorCalibrated: Boolean = false,
     val sensorCalibrationProgress: Float = 0f,
     val sensorCalibrationCountdown: Int = 0,
+    val calibrationMovementDetected: Boolean = false,
     val isAiModelLoaded: Boolean = false,
     
     // C++ EKF Map-Matched Coordinates
@@ -322,6 +323,7 @@ class NavigationViewModel(
             isSensorCalibrated = calib.isCalibrated,
             sensorCalibrationProgress = calib.progress,
             sensorCalibrationCountdown = calib.secondsRemaining,
+            calibrationMovementDetected = calib.movementDetected,
             isAiModelLoaded = aiEstimator.isModelLoaded,
             ekfX = ekfState.getOrElse(0) { 0f },
             ekfY = ekfState.getOrElse(1) { 0f },
