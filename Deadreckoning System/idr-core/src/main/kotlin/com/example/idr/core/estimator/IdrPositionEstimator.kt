@@ -60,7 +60,7 @@ class CoreDeadReckoner(
 
     override fun reset() {
         currentVelocity = 0f
-        currentHeading = -1f
+        // Deliberately NOT zeroing currentHeading so it carries forward into INS_ONLY
         lastZuptState = false
     }
 

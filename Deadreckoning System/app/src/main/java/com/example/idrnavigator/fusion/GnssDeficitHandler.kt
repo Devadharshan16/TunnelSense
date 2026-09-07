@@ -141,7 +141,8 @@ class GnssDeficitHandler(
         }
 
         override fun reset() {
-            // no-op
+            classicalEstimator.reset()
+            aiEstimator?.reset()
         }
     }
 

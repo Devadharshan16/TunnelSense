@@ -145,6 +145,7 @@ class CoreGnssDeficitHandler(
                     cumulativeInsDistance = 0f
                     insOnlyStartTime = currentTime
                     consecutiveGoodFixes = 0
+                    positionEstimator.reset() // Clear stale velocity/heading state before integrating fresh
 
                     _positionEstimate.value = IdrPositionEstimate(
                         lat = handoffPos.lat,

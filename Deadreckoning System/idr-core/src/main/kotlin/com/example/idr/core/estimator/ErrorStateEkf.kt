@@ -66,6 +66,7 @@ class ErrorStateEkf(
     }
 
     fun reset() {
+        val oldHeading = state[2]
         for (i in 0 until STATE_DIM) {
             state[i] = 0f
             for (j in 0 until STATE_DIM) {
@@ -73,6 +74,7 @@ class ErrorStateEkf(
                 Q[i][j] = 0f
             }
         }
+        state[2] = oldHeading
 
         // Initial covariance
         P[0][0] = 1.0f

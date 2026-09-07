@@ -150,9 +150,10 @@ class AiPositionEstimator(
         return (stationaryCount.toFloat() / imuWindow.size) >= CoreDeadReckoner.ZUPT_CONSENSUS_RATIO
     }
 
-    fun reset() {
+    override fun reset() {
         inputBuilder.reset()
         ekf.reset()
+        classicalFallback.reset()
         smoothedVelocityMps = 0f
         rawPredictedKmH = 0f
     }
