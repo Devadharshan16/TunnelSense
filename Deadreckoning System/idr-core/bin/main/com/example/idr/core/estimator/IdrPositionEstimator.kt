@@ -18,17 +18,9 @@ interface IdrPositionEstimator {
         headingDeg: Float,
         deltaTimeSeconds: Float
     ): IdrLatLon
-    fun reset()
+    fun reset(seedHeading: Float = -1f)
 }
 
-/**
- * Pure Kotlin Dead Reckoner implementing:
- *  - 3D Zero-Velocity Updates (ZUPT) using gravity deviation & gyro magnitude
- *  - Sliding-window consensus voting against vibration spikes
- *  - Forward acceleration strapdown integration
- *  - Yaw rate gyro integration with magnetometer complementary filtering
- *  - Flat-Earth displacement to geodetic lat/lon translation
- */
 class CoreDeadReckoner(
     private val logger: IdrLogger = ConsoleIdrLogger
 ) : IdrPositionEstimator {
@@ -36,32 +28,30 @@ class CoreDeadReckoner(
     companion object {
         private const val TAG = "CoreDeadReckoner"
 
-        /** Acceleration magnitude deviation from 9.81 m/s² below which device is translationally stationary */
         const val ZUPT_ACCEL_MAGNITUDE_THRESHOLD = 0.85f
-
-        /** Gyroscope magnitude (rad/s) below which device is also rotationally stationary */
         const val ZUPT_GYRO_MAGNITUDE_THRESHOLD = 0.15f
-
-        /** Percentage of window samples required to agree before ZUPT engages */
         const val ZUPT_CONSENSUS_RATIO = 0.80f
-
         const val GRAVITY = 9.81f
-
-        /** Velocities below this threshold (~0.54 km/h) are treated as sensor noise and clamped to 0 */
         const val VELOCITY_DEADBAND_MPS = 0.15f
+        const val MAG_COMPLEMENTARY_WEIGHT = 0.00f // Disabled to prevent tunnel rebar from destroying heading
 
-        /** Magnetometer complementary filter correction weight */
-        const val MAG_COMPLEMENTARY_WEIGHT = 0.02f
+        const val MAX_PLAUSIBLE_ACCEL_MPS2 = 1.5f
+        const val SUSTAINED_HIGH_ACCEL_LIMIT = 3
+        const val MAX_PLAUSIBLE_VELOCITY_MPS = 50f
     }
 
     private var currentVelocity = 0f
     private var currentHeading = -1f
     private var lastZuptState = false
+    private var sustainedHighAccelCount = 0
 
-    override fun reset() {
+    override fun reset(seedHeading: Float) {
         currentVelocity = 0f
-        currentHeading = -1f
+        if (seedHeading >= 0f) {
+            currentHeading = seedHeading
+        }
         lastZuptState = false
+        sustainedHighAccelCount = 0
     }
 
     override fun estimateVelocity(imuWindow: List<IdrImuSample>): Float {
@@ -71,14 +61,16 @@ class CoreDeadReckoner(
         for (data in imuWindow) {
             val accelMag = sqrt(
                 data.accelX * data.accelX +
-                data.accelY * data.accelY +
-                data.accelZ * data.accelZ
+                        data.accelY * data.accelY +
+                        data.accelZ * data.accelZ
             )
-            val accelDeviation = abs(accelMag - GRAVITY)
+            val gyroMag = sqrt(
+                data.gyroX * data.gyroX +
+                        data.gyroY * data.gyroY +
+                        data.gyroZ * data.gyroZ
+            )
 
-            // Translational stationarity depends purely on linear acceleration deviation from 1g.
-            // Even if the phone/vehicle rotates in place (high gyro), translational velocity is zero.
-            if (accelDeviation < ZUPT_ACCEL_MAGNITUDE_THRESHOLD) {
+            if (accelMag < ZUPT_ACCEL_MAGNITUDE_THRESHOLD && gyroMag < ZUPT_GYRO_MAGNITUDE_THRESHOLD) {
                 stationarySamples++
             }
         }
@@ -90,15 +82,16 @@ class CoreDeadReckoner(
             logger.d(
                 TAG,
                 "ZUPT ${if (isStationary) "ENGAGED" else "RELEASED"} | " +
-                "consensus=${(consensusRatio * 100).toInt()}% | " +
-                "stationarySamples=$stationarySamples/${imuWindow.size} | " +
-                "velocity before reset=$currentVelocity"
+                        "consensus=${(consensusRatio * 100).toInt()}% | " +
+                        "stationarySamples=$stationarySamples/${imuWindow.size} | " +
+                        "velocity before reset=$currentVelocity"
             )
             lastZuptState = isStationary
         }
 
         if (isStationary) {
             currentVelocity = 0f
+            sustainedHighAccelCount = 0
             return 0f
         }
 
@@ -108,7 +101,24 @@ class CoreDeadReckoner(
 
             if (dtSec > 0) {
                 val avgAccel = imuWindow.map { it.accelY }.average().toFloat()
+
+                if (abs(avgAccel) > MAX_PLAUSIBLE_ACCEL_MPS2) {
+                    sustainedHighAccelCount++
+                    if (sustainedHighAccelCount > SUSTAINED_HIGH_ACCEL_LIMIT) {
+                        logger.d(
+                            TAG,
+                            "REJECTED sustained implausible accel=$avgAccel " +
+                                    "(tilt leakage guard, count=$sustainedHighAccelCount) — velocity forced to 0"
+                        )
+                        currentVelocity = 0f
+                        return 0f
+                    }
+                } else {
+                    sustainedHighAccelCount = 0
+                }
+
                 currentVelocity += avgAccel * dtSec
+                currentVelocity = currentVelocity.coerceIn(0f, MAX_PLAUSIBLE_VELOCITY_MPS)
 
                 if (currentVelocity < VELOCITY_DEADBAND_MPS) currentVelocity = 0f
             }

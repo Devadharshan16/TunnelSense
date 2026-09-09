@@ -145,6 +145,7 @@ class CoreGnssDeficitHandler(
                     cumulativeInsDistance = 0f
                     insOnlyStartTime = currentTime
                     consecutiveGoodFixes = 0
+                    positionEstimator.reset(gpsData.bearingDeg) // Clear stale state but seed heading with GPS bearing
 
                     _positionEstimate.value = IdrPositionEstimate(
                         lat = handoffPos.lat,
@@ -167,7 +168,7 @@ class CoreGnssDeficitHandler(
                         lat = gpsData.lat,
                         lon = gpsData.lon,
                         speedMps = gpsData.speedMps,
-                        headingDeg = estimatedHeading,
+                        headingDeg = if (gpsData.speedMps > 1.5f) gpsData.bearingDeg else estimatedHeading,
                         state = IdrGnssState.GNSS_ACTIVE,
                         driftMeters = 0f,
                         gpsAccuracy = gpsData.accuracyMeters,
@@ -264,13 +265,13 @@ class CoreGnssDeficitHandler(
                     insOnlyStartTime = 0L
                     cumulativeInsDistance = 0f
                     transitionStartInsPos = null
-                    positionEstimator.reset()
+                    positionEstimator.reset(-1f)
 
                     _positionEstimate.value = IdrPositionEstimate(
                         lat = gpsData.lat,
                         lon = gpsData.lon,
                         speedMps = gpsData.speedMps,
-                        headingDeg = estimatedHeading,
+                        headingDeg = if (gpsData.speedMps > 1.5f) gpsData.bearingDeg else estimatedHeading,
                         state = IdrGnssState.GNSS_ACTIVE,
                         driftMeters = 0f,
                         gpsAccuracy = gpsData.accuracyMeters,

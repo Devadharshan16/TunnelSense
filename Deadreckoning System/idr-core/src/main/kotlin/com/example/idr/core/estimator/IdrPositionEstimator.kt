@@ -47,6 +47,9 @@ class CoreDeadReckoner(
 
     override fun reset(seedHeading: Float) {
         currentVelocity = 0f
+        if (seedHeading >= 0f) {
+            currentHeading = seedHeading
+        }
         lastZuptState = false
         sustainedHighAccelCount = 0
     }

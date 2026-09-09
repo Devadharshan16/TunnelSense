@@ -146,11 +146,8 @@ class OnnxVelocityRunner(private val context: Context) : AutoCloseable {
                     val muTensor = outputMap.get(OUTPUT_NODE_NAME).get() as OnnxTensor
                     val rawPredictedKmH = muTensor.floatBuffer.get(0)
                     
-                    // Extract Log-Variance (Uncertainty)
-                    val varTensor = outputMap.get(VARIANCE_NODE_NAME).get() as OnnxTensor
-                    val logVariance = varTensor.floatBuffer.get(0)
-                    
-                    val actualVariance = kotlin.math.exp(logVariance.toDouble()).toFloat()
+                    // Extract Log-Variance (Uncertainty) (DISABLED: Model only outputs 'mu')
+                    val actualVariance = 8.0f // Fallback variance
 
                     val elapsedNanos = System.nanoTime() - startTime
                     lastInferenceLatencyMs = kotlin.math.max(1L, (elapsedNanos + 500_000L) / 1_000_000L)

@@ -65,7 +65,8 @@ class ErrorStateEkf(
         reset()
     }
 
-    fun reset() {
+    fun reset(seedHeading: Float = -1f) {
+        val oldHeading = state[2]
         for (i in 0 until STATE_DIM) {
             state[i] = 0f
             for (j in 0 until STATE_DIM) {
@@ -73,6 +74,7 @@ class ErrorStateEkf(
                 Q[i][j] = 0f
             }
         }
+        state[2] = if (seedHeading >= 0f) Math.toRadians(seedHeading.toDouble()).toFloat() else oldHeading
 
         // Initial covariance
         P[0][0] = 1.0f
@@ -418,6 +420,44 @@ class ErrorStateEkf(
             return (Math.toDegrees(rad.toDouble()).toFloat() % 360f + 360f) % 360f
         }
 
+        /**
+     * Magnetometer heading update.
+     * Allows the EKF to observe and correct the gyroscope bias (b_g) over time.
+     */
+    fun updateHeading(measuredHeadingRad: Float, variance: Float) {
+        val S = P[2][2] + variance
+        if (S <= 0f) return
+        
+        var innovation = measuredHeadingRad - state[2]
+        innovation = normalizeAngleRad(innovation)
+        
+        for (i in 0 until STATE_DIM) {
+            bufferKScalar[i] = P[i][2] / S
+        }
+        
+        for (i in 0 until STATE_DIM) {
+            state[i] += bufferKScalar[i] * innovation
+        }
+        state[2] = normalizeAngleRad(state[2])
+        
+        for (i in 0 until STATE_DIM) {
+            val ki = bufferKScalar[i]
+            for (j in 0 until STATE_DIM) {
+                bufferNewP[i][j] = P[i][j] - ki * P[2][j]
+            }
+        }
+        
+        for (i in 0 until STATE_DIM) {
+            for (j in 0 until STATE_DIM) {
+                P[i][j] = bufferNewP[i][j]
+            }
+        }
+        
+        sanitizeState()
+    }
+
+
+
     private fun normalizeAngleRad(angle: Float): Float {
         var a = angle
         if (a.isNaN() || a.isInfinite()) return 0f
@@ -426,3 +466,5 @@ class ErrorStateEkf(
         return a
     }
 }
+
+
